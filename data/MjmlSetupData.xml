@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+This software is in the public domain under CC0 1.0 Universal plus a 
+Grant of Patent License.
+
+To the extent possible under law, the author(s) have dedicated all
+copyright and related and neighboring rights to this software to the
+public domain worldwide. This software is distributed without any
+warranty.
+
+You should have received a copy of the CC0 Public Domain Dedication
+along with this software (see the LICENSE.md file). If not, see
+<http://creativecommons.org/publicdomain/zero/1.0/>.
+-->
+<entity-facade-xml type="seed">
+    <moqui.basic.Enumeration description="Mjml Theme Type" enumId="STT_MJML" enumTypeId="ScreenThemeType"/>
+    <moqui.screen.ScreenTheme screenThemeId="MJML_DEFAULT" screenThemeTypeEnumId="STT_MJML"
+            description="Mjml Default Theme"/>
+    <!-- NOTE: these default resources are from the Moqui default runtime webroot component -->
+    <moqui.screen.ScreenThemeResource screenThemeId="MJML_DEFAULT" sequenceNum="50" resourceTypeEnumId="STRT_STYLESHEET" resourceValue="/mjmlstatic/css/grapes.min.css"/>
+    <delete-moqui.screen.ScreenThemeResource screenThemeId="MJML_DEFAULT" sequenceNum="52" resourceTypeEnumId="STRT_STYLESHEET" resourceValue="/mjmlstatic/css/grapesjs-mjml.css"/>
+
+    <moqui.screen.ScreenThemeResource screenThemeId="MJML_DEFAULT" sequenceNum="51" resourceTypeEnumId="STRT_SCRIPT" resourceValue="/mjmlstatic/js/grapesjs.min.js"/>
+    <delete-moqui.screen.ScreenThemeResource screenThemeId="MJML_DEFAULT" sequenceNum="52" resourceTypeEnumId="STRT_SCRIPT" resourceValue="/mjmlstatic/js/grapesjs-mjml.min.js"/>
+
+<!--    <moqui.screen.ScreenThemeResource screenThemeId="MJML_DEFAULT" sequenceNum="100" resourceTypeEnumId="STRT_HEADER_LOGO"-->
+<!--            resourceValue="/images/MoquiLogoSmall.png"/>-->
+<!--    <moqui.screen.ScreenThemeResource screenThemeId="MJML_DEFAULT" sequenceNum="101" resourceTypeEnumId="STRT_SHORTCUT_ICON"-->
+<!--            resourceValue="/favicon.ico"/>-->
+<!--    <moqui.screen.ScreenThemeResource screenThemeId="MJML_DEFAULT" sequenceNum="102" resourceTypeEnumId="STRT_BODY_CLASS"-->
+<!--            resourceValue="bg-light"/>-->
+
+    <moqui.screen.ScreenThemeResource screenThemeId="MJML_DEFAULT" sequenceNum="110" resourceTypeEnumId="STRT_HEADER_TITLE"
+            resourceValue="Email Editor"/>
+
+
+</entity-facade-xml>

@@ -2,7 +2,7 @@
 
 # runtime added files
 build
-lib/example-*.jar
+lib/moqui-mjml-*.jar
 
 # IntelliJ IDEA files
 .idea/
