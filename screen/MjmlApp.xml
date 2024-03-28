@@ -156,7 +156,6 @@ along with this software (see the LICENSE.md file). If not, see
                 </mjml>
             </div>
 
-
             <script type="text/javascript">
                 // Wait for the plugin to be injected by the dev server
                 window.onload = () => {

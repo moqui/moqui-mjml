@@ -18,10 +18,10 @@ along with this software (see the LICENSE.md file). If not, see
             description="Mjml Default Theme"/>
     <!-- NOTE: these default resources are from the Moqui default runtime webroot component -->
     <moqui.screen.ScreenThemeResource screenThemeId="MJML_DEFAULT" sequenceNum="50" resourceTypeEnumId="STRT_STYLESHEET" resourceValue="/mjmlstatic/css/grapes.min.css"/>
-    <delete-moqui.screen.ScreenThemeResource screenThemeId="MJML_DEFAULT" sequenceNum="52" resourceTypeEnumId="STRT_STYLESHEET" resourceValue="/mjmlstatic/css/grapesjs-mjml.css"/>
+    <moqui.screen.ScreenThemeResource screenThemeId="MJML_DEFAULT" sequenceNum="52" resourceTypeEnumId="STRT_STYLESHEET" resourceValue="/mjmlstatic/css/grapesjs-mjml.css"/>
 
     <moqui.screen.ScreenThemeResource screenThemeId="MJML_DEFAULT" sequenceNum="51" resourceTypeEnumId="STRT_SCRIPT" resourceValue="/mjmlstatic/js/grapesjs.min.js"/>
-    <delete-moqui.screen.ScreenThemeResource screenThemeId="MJML_DEFAULT" sequenceNum="52" resourceTypeEnumId="STRT_SCRIPT" resourceValue="/mjmlstatic/js/grapesjs-mjml.min.js"/>
+    <moqui.screen.ScreenThemeResource screenThemeId="MJML_DEFAULT" sequenceNum="52" resourceTypeEnumId="STRT_SCRIPT" resourceValue="/mjmlstatic/js/grapesjs-mjml.min.js"/>
 
 <!--    <moqui.screen.ScreenThemeResource screenThemeId="MJML_DEFAULT" sequenceNum="100" resourceTypeEnumId="STRT_HEADER_LOGO"-->
 <!--            resourceValue="/images/MoquiLogoSmall.png"/>-->
