@@ -16,11 +16,30 @@ along with this software (see the LICENSE.md file). If not, see
         xsi:noNamespaceSchemaLocation="http://moqui.org/xsd/xml-screen-3.xsd"
         menu-image="fa fa-flash" menu-image-type="icon" standalone="true" screen-theme-type-enum-id="STT_MJML" >
 
+    <parameter name="resourceId"/>
+
+    <transition name="handleGrapeJs" read-only="true" method="get">
+        <actions>
+            <log level="warn" message="context.toString() ${context.toString()}"/>
+            <service-call name="moqui.MjmlServices.get#GrapeJs" in-map="[resourceId:resourceId]" out-map="context"/>
+        </actions>
+        <default-response url="."/></transition>
+    <transition name="handleGrapeJs" read-only="true" method="post">
+        <actions>
+            <log level="warn" message="context.toString() ${context.toString()}"/>
+            <service-call name="moqui.MjmlServices.store#GrapeJs" in-map="context" out-map="context"/>
+        </actions>
+        <default-response url="."/></transition>
+
+    <actions>
+        <set field="baseLinkUrl" from="!'production'.equals(System.getProperty('instance_purpose')) ? 'http://localhost:8080' : ec.web.getWebappRootUrl(true,true)"/>
+    </actions>
+
     <widgets>
         <render-mode><text type="html" location="component://webroot/screen/includes/Header.html.ftl"/></render-mode>
 
-
-        <render-mode><text type="html,vuet,qvt"><![CDATA[
+        <render-mode><text type="html"><![CDATA[
+            <input type="hidden" id="confMoquiSessionToken" value="${ec.web.sessionToken}">
             <style>
                 body,
                 html {
@@ -159,10 +178,37 @@ along with this software (see the LICENSE.md file). If not, see
             <script type="text/javascript">
                 // Wait for the plugin to be injected by the dev server
                 window.onload = () => {
+                    const resourceId = new URLSearchParams(window.location.search).get('resourceId');
+
                     window.editor = grapesjs.init({
                         height: '100%',
                         noticeOnUnload: false,
-                        storageManager: false,
+                        // Default configurations
+                        storageManager: {
+                            type: 'remote', // Storage type. Available: local | remote
+                            autosave: true, // Store data automatically
+                            autoload: true, // Autoload stored data on init
+                            stepsBeforeSave: 1, // If autosave is enabled, indicates how many changes are necessary before the store method is triggered
+                            // ...
+                            // Default storage options
+                            options: {
+                                remote: {
+                                    urlLoad: "${baseLinkUrl}/rest/s1/moqui-mjml/mjml?resourceId=" + resourceId,
+                                    urlStore: "${baseLinkUrl}/rest/s1/moqui-mjml/mjml?resourceId=" + resourceId,
+                                    headers: {
+                                        "X-CSRF-Token": document.getElementById('confMoquiSessionToken').value
+                                    },
+                                    // The `remote` storage uses the POST method when stores data but
+                                    // the json-server API requires PATCH.
+                                    // fetchOptions: opts => (opts.method === 'POST' ?  { method: 'PATCH' } : {}),
+                                    // As the API stores projects in this format `{id: 1, data: projectData }`,
+                                    // we have to properly update the body before the store and extract the
+                                    // project data from the response result.
+                                    onStore: data => ({ resourceId: resourceId, data }),
+                                    onLoad: result => result.data,
+                                },
+                            }
+                        },
                         fromElement: true,
                         container: '#gjs',
 

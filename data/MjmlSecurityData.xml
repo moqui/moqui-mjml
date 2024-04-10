@@ -29,7 +29,7 @@ along with this software (see the LICENSE.md file). If not, see
     <!-- Artifact group for all of the Moqui Mjml REST API via the mjml resource (the root resource) -->
     <moqui.security.ArtifactGroup artifactGroupId="MOQUI_MJML_API" description="Example REST API (via root resource)"/>
     <moqui.security.ArtifactGroupMember artifactGroupId="MOQUI_MJML_API" artifactTypeEnumId="AT_REST_PATH"
-            inheritAuthz="Y" artifactName="/example"/>
+            inheritAuthz="Y" artifactName="/moqui-mjml/mjml"/>
     <!-- Full permissions for the ADMIN user group -->
     <moqui.security.ArtifactAuthz artifactAuthzId="MOQUI_MJML_API_AUTHZ_ALL" userGroupId="ADMIN" artifactGroupId="MOQUI_MJML_API"
             authzTypeEnumId="AUTHZT_ALWAYS" authzActionEnumId="AUTHZA_ALL"/>

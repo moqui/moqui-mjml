@@ -20,6 +20,7 @@ along with this software (see the LICENSE.md file). If not, see
     <moqui.screen.ScreenThemeResource screenThemeId="MJML_DEFAULT" sequenceNum="50" resourceTypeEnumId="STRT_STYLESHEET" resourceValue="/mjmlstatic/css/grapes.min.css"/>
     <moqui.screen.ScreenThemeResource screenThemeId="MJML_DEFAULT" sequenceNum="52" resourceTypeEnumId="STRT_STYLESHEET" resourceValue="/mjmlstatic/css/grapesjs-mjml.css"/>
 
+    <delete-moqui.screen.ScreenThemeResource screenThemeId="MJML_DEFAULT" sequenceNum="10" resourceTypeEnumId="STRT_SCRIPT" resourceValue="/js/MoquiLib.js"/>
     <moqui.screen.ScreenThemeResource screenThemeId="MJML_DEFAULT" sequenceNum="51" resourceTypeEnumId="STRT_SCRIPT" resourceValue="/mjmlstatic/js/grapesjs.min.js"/>
     <moqui.screen.ScreenThemeResource screenThemeId="MJML_DEFAULT" sequenceNum="52" resourceTypeEnumId="STRT_SCRIPT" resourceValue="/mjmlstatic/js/grapesjs-mjml.min.js"/>
 
@@ -33,5 +34,7 @@ along with this software (see the LICENSE.md file). If not, see
     <moqui.screen.ScreenThemeResource screenThemeId="MJML_DEFAULT" sequenceNum="110" resourceTypeEnumId="STRT_HEADER_TITLE"
             resourceValue="Email Editor"/>
 
+    <moqui.resource.DbResource resourceId="GRAPESJS" filename="grapesjs" isFile="N"/>
+    <moqui.resource.DbResource resourceId="GRAPESJS_PROJECT" filename="project" isFile="N" parentResourceId="GRAPESJS"/>
 
 </entity-facade-xml>

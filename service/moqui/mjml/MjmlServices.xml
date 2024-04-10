@@ -14,5 +14,47 @@ along with this software (see the LICENSE.md file). If not, see
 -->
 <services xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://moqui.org/xsd/service-definition-3.xsd">
 
+    <service verb="get" noun="GrapeJs">
+        <description>Create MJML</description>
+        <in-parameters>
+            <parameter name="resourceId"/>
+        </in-parameters>
+        <out-parameters>
+            <parameter name="data"/>
+        </out-parameters>
+        <actions>
+            <set field="file" from="ec.resource.getLocationReference('dbresource://grapesjs/project/'+resourceId)"/>
+            <set field="data" from="file.getText()"/>
+        </actions>
+    </service>
+    <service verb="store" noun="GrapeJs">
+        <description>Create MJML</description>
+        <in-parameters>
+            <parameter name="resourceId"/>
+            <parameter name="data" type="String"/>
+        </in-parameters>
+        <out-parameters>
+            <parameter name="resourceId"/>
+        </out-parameters>
+        <actions>
+<!--            <log level="warn" message="context.toString() ${context.toString()}"/>-->
+<!--            <log level="warn" message="store#GrapeJs ec.web.secureRequestParameters.data ${ec.web.secureRequestParameters.data}"/>-->
+
+            <log level="warn" message="store#GrapeJs ec.web.secureRequestParameters._requestBodyText ${ec.web.secureRequestParameters._requestBodyText}"/>
+            <log level="warn" message="store#GrapeJs data ${data} typeof data ${data.getClass().getName()}"/>
+
+<!--            <set field="data" from="groovy.json.JsonOutput.toJson(data)"/>-->
+
+            <set field="project" from="ec.resource.getLocationReference('dbresource://grapesjs/project')"/>
+            <set field="file" from="project.makeFile(java.util.UUID.randomUUID().toString())"/>
+            <script><![CDATA[
+                file.putText(data)
+                file.move(project.location + "/" + file.dbResourceId)
+                ]]></script>
+            <set field="resourceId" from="context.resourceId"/>
+
+        </actions>
+    </service>
+
 
 </services>
