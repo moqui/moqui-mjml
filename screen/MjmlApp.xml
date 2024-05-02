@@ -179,6 +179,7 @@ along with this software (see the LICENSE.md file). If not, see
                 // Wait for the plugin to be injected by the dev server
                 window.onload = () => {
                     const resourceId = new URLSearchParams(window.location.search).get('resourceId');
+                    const projectEndpoint = `${baseLinkUrl}/mjml/handleGrapeJs?resourceId=${resourceId}`;
 
                     window.editor = grapesjs.init({
                         height: '100%',

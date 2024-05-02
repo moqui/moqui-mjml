@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+This software is in the public domain under CC0 1.0 Universal plus a 
+Grant of Patent License.
+
+To the extent possible under law, the author(s) have dedicated all
+copyright and related and neighboring rights to this software to the
+public domain worldwide. This software is distributed without any
+warranty.
+
+You should have received a copy of the CC0 Public Domain Dedication
+along with this software (see the LICENSE.md file). If not, see
+<http://creativecommons.org/publicdomain/zero/1.0/>.
+-->
+<services xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://moqui.org/xsd/service-definition-3.xsd">
+
+    <service verb="load" noun="GrapeJs">
+        <description>Create MJML</description>
+        <in-parameters>
+            <parameter name="resourceId"/>
+        </in-parameters>
+        <out-parameters>
+            <parameter name="resourceId"/>
+            <parameter name="data"/>
+        </out-parameters>
+        <actions>
+            <log level="warn" message="load context.toString() ${context.toString()}"/>
+
+            <if condition="!resourceId">
+                <then>
+                    <set field="grapesJsResource" from="ec.resource.getLocationReference('dbresource://grapesjs')"/>
+                    <service-call name="create#moqui.resource.DbResource" in-map="[parentResourceId:grapesJsResource.getDbResourceId(),isFile:'Y']" out-map="dbResource"/>
+                    <service-call name="update#moqui.resource.DbResource" in-map="[resourceId:dbResource.resourceId,filename:dbResource.resourceId]" out-map="dbResource"/>
+                    <set field="versionName" value="01"/>
+                    <service-call name="create#moqui.resource.DbResourceFile" in-map="[resourceId: dbResource.resourceId,mimeType: 'text/json',versionName: versionName,rootVersionName: versionName,fileData:null]"/>
+                    <service-call name="create#moqui.resource.DbResourceFileHistory" in-map="[resourceId: dbResource.resourceId,versionDate: ec.user.nowTimestamp,userId: ec.user.userId,isDiff: 'N']"/>
+                    <set field="resourceId" from="dbResource.resourceId"/>
+                </then>
+                <else>
+                    <entity-find-one entity-name="moqui.resource.DbResource" value-field="dbResource" auto-field-map="[resourceId:resourceId]"/>
+                    <!--                    <log level="warn" message="dbResource ${dbResource}"/>-->
+                    <if condition="!dbResource">
+                        <return error="true" message="Resource not found"/>
+                    </if>
+                    <set field="actualDbResourcePath" from="null"/>
+                    <set field="dbResourcePath" from="dbResource.filename"/>
+                    <set field="lastDbResource" from="dbResource"/>
+                    <!--                    <log level="warn" message="lastDbResource ${lastDbResource}"/>-->
+                    <script>
+                        while (actualDbResourcePath == null) {
+//                            ec.logger.warn('dbResourcePath: '+dbResourcePath)
+                            if (lastDbResource.parentResourceId == null) {
+                                dbResourcePath = 'dbresource://'+dbResourcePath
+                                actualDbResourcePath = dbResourcePath
+//                                ec.logger.warn('actualDbResourcePath: '+actualDbResourcePath)
+                            } else {
+                                lastDbResource = ec.entity.fastFindOne("moqui.resource.DbResource", true, false, lastDbResource.parentResourceId)
+                                dbResourcePath = lastDbResource.filename+'/'+dbResourcePath
+                            }
+                        }
+                    </script>
+                    <set field="putDbResource" from="ec.resource.getLocationReference(actualDbResourcePath)"/>
+                    <entity-find entity-name="moqui.resource.DbResourceFileHistory" list="dbResourceHistoryList" limit="1">
+                        <econdition field-name="resourceId" from="resourceId"/>
+                        <order-by field-name="-versionName"/>
+                    </entity-find>
+                    <if condition="dbResourceHistoryList.size() == 0">
+                        <return error="true" message="Resource not found"/>
+                    </if>
+
+                    <set field="data" from="putDbResource.getText(dbResourceHistoryList.getFirst().versionName)"/>
+                </else>
+            </if>
+        </actions>
+    </service>
+    <service verb="store" noun="GrapeJs" authenticate="anonymous-all">
+        <description>Create MJML</description>
+        <in-parameters>
+            <parameter name="resourceId"/>
+            <parameter name="data">
+            </parameter>
+        </in-parameters>
+        <out-parameters>
+            <parameter name="resourceId"/>
+        </out-parameters>
+        <actions>
+            <log level="warn" message="store context.toString() ${context.toString()}"/>
+            <if condition="!resourceId">
+                <then>
+<!--                    <log level="warn" message="resourceId is null"/>-->
+                    <set field="grapesJsResource" from="ec.resource.getLocationReference('dbresource://grapesjs')"/>
+                    <service-call name="create#moqui.resource.DbResource" in-map="[parentResourceId:grapesJsResource.getDbResourceId(),isFile:'Y']" out-map="dbResource"/>
+                    <service-call name="update#moqui.resource.DbResource" in-map="[resourceId:dbResource.resourceId,filename:dbResource.resourceId]" out-map="dbResource"/>
+                    <set field="versionName" value="01"/>
+                    <service-call name="create#moqui.resource.DbResourceFile" in-map="[resourceId: dbResource.resourceId,mimeType: 'text/json',versionName: versionName,rootVersionName: versionName,fileData:data]"/>
+                    <service-call name="create#moqui.resource.DbResourceFileHistory" in-map="[resourceId: dbResource.resourceId,versionDate: ec.user.nowTimestamp,userId: ec.user.userId,isDiff: 'N']"/>
+                    <set field="resourceId" from="dbResource.resourceId"/>
+                </then>
+                <else>
+<!--                    <log level="warn" message="resourceId is ${resourceId}"/>-->
+                    <entity-find-one entity-name="moqui.resource.DbResource" value-field="dbResource" auto-field-map="[resourceId:resourceId]"/>
+<!--                    <log level="warn" message="dbResource ${dbResource}"/>-->
+                    <if condition="!dbResource">
+                        <return error="true" message="Resource not found"/>
+                    </if>
+                    <set field="actualDbResourcePath" from="null"/>
+                    <set field="dbResourcePath" from="dbResource.filename"/>
+                    <set field="lastDbResource" from="dbResource"/>
+<!--                    <log level="warn" message="lastDbResource ${lastDbResource}"/>-->
+                    <script>
+                        while (actualDbResourcePath == null) {
+//                            ec.logger.warn('dbResourcePath: '+dbResourcePath)
+                            if (lastDbResource.parentResourceId == null) {
+                                dbResourcePath = 'dbresource://'+dbResourcePath
+                                actualDbResourcePath = dbResourcePath
+//                                ec.logger.warn('actualDbResourcePath: '+actualDbResourcePath)
+                            } else {
+                                lastDbResource = ec.entity.fastFindOne("moqui.resource.DbResource", true, false, lastDbResource.parentResourceId)
+                                dbResourcePath = lastDbResource.filename+'/'+dbResourcePath
+                            }
+                        }
+                    </script>
+                    <set field="putDbResource" from="ec.resource.getLocationReference(actualDbResourcePath)"/>
+                    <script>
+                        putDbResource.putText(data)
+                    </script>
+
+                </else>
+            </if>
+        </actions>
+    </service>
+
+
+</services>
