@@ -21,7 +21,7 @@ along with this software (see the LICENSE.md file). If not, see
     <moqui.screen.ScreenThemeResource screenThemeId="MJML_DEFAULT" sequenceNum="52" resourceTypeEnumId="STRT_STYLESHEET" resourceValue="/mjmlstatic/css/grapesjs-mjml.css"/>
 
     <delete-moqui.screen.ScreenThemeResource screenThemeId="MJML_DEFAULT" sequenceNum="10" resourceTypeEnumId="STRT_SCRIPT" resourceValue="/js/MoquiLib.js"/>
-    <moqui.screen.ScreenThemeResource screenThemeId="MJML_DEFAULT" sequenceNum="51" resourceTypeEnumId="STRT_SCRIPT" resourceValue="/mjmlstatic/js/grapesjs.min.js"/>
+    <moqui.screen.ScreenThemeResource screenThemeId="MJML_DEFAULT" sequenceNum="51" resourceTypeEnumId="STRT_SCRIPT" resourceValue="/mjmlstatic/js/grapes.min.js"/>
     <moqui.screen.ScreenThemeResource screenThemeId="MJML_DEFAULT" sequenceNum="52" resourceTypeEnumId="STRT_SCRIPT" resourceValue="/mjmlstatic/js/grapesjs-mjml.min.js"/>
 
 <!--    <moqui.screen.ScreenThemeResource screenThemeId="MJML_DEFAULT" sequenceNum="100" resourceTypeEnumId="STRT_HEADER_LOGO"-->

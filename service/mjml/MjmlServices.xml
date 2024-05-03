@@ -30,6 +30,7 @@ along with this software (see the LICENSE.md file). If not, see
 
             <if condition="!resourceId">
                 <then>
+                    <return error="true" message="Resource not found"/>
                     <set field="grapesJsResource" from="ec.resource.getLocationReference('dbresource://grapesjs/project')"/>
                     <service-call name="create#moqui.resource.DbResource" in-map="[parentResourceId:grapesJsResource.getDbResourceId(),isFile:'Y']" out-map="dbResource"/>
                     <service-call name="update#moqui.resource.DbResource" in-map="[resourceId:dbResource.resourceId,filename:dbResource.resourceId]" out-map="dbResource"/>
@@ -39,6 +40,7 @@ along with this software (see the LICENSE.md file). If not, see
                     <service-call name="create#moqui.resource.DbResourceFile" in-map="[resourceId: dbResource.resourceId,mimeType: 'text/json',versionName: versionName,rootVersionName: versionName,fileData:data]"/>
                     <service-call name="create#moqui.resource.DbResourceFileHistory" in-map="[resourceId: dbResource.resourceId,versionDate: ec.user.nowTimestamp,userId: ec.user.userId,isDiff: 'N']"/>
                     <set field="resourceId" from="dbResource.resourceId"/>
+
                 </then>
                 <else>
                     <entity-find-one entity-name="moqui.resource.DbResource" value-field="dbResource" auto-field-map="[resourceId:resourceId]"/>

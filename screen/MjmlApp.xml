@@ -178,7 +178,7 @@ along with this software (see the LICENSE.md file). If not, see
             <script type="text/javascript">
                 // Wait for the plugin to be injected by the dev server
                 window.onload = () => {
-                    const resourceId = new URLSearchParams(window.location.search).get('resourceId');
+                    let resourceId = new URLSearchParams(window.location.search).get('resourceId');
 
                     window.editor = grapesjs.init({
           //               projectData: {
@@ -216,11 +216,13 @@ along with this software (see the LICENSE.md file). If not, see
                                     // project data from the response result.
                                     onStore: data => {
                                         console.log('onStore', ({ id: resourceId, data }))
-                                        console.log('resourceId', resourceId)
+                                        console.log('onStore resourceId', resourceId)
+                                        console.log('onStore editor', editor)
+                                        console.log('onStore this ', this)
                                         // const url = new URL(window.location.href)
                                         // url.searchParams.set('resourceId', resourceId);
                                         // window.history.pushState({}, '', url)
-                                        return { id: resourceId, data }
+                                        return { resourceId: resourceId, data }
                                     },
                                     onLoad: result => {
                                         const url = new URL(window.location.href)
