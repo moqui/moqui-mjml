@@ -40,7 +40,7 @@ along with this software (see the LICENSE.md file). If not, see
 
     <dbResources resourceId="GRAPESJS_TEMPLATE_DEFAULT" filename="default" isFile="Y" parentResourceId="GRAPESJS_TEMPLATE">
         <file rootVersionName="01" mimeType="text/json" versionName="01">
-            <fileData><![CDATA[ewogICAgICAgICAgICAgICAgICAgICAgICAgICAgcGFnZXM6IFsKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB7CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIGNvbXBvbmVudDogYAogICAgICAgICAgICA8ZGl2IGNsYXNzPSJ0ZXN0Ij5Jbml0aWFsIGNvbnRlbnQ8L2Rpdj4KICAgICAgICAgICAgPHN0eWxlPi50ZXN0IHsgY29sb3I6IHJlZCB9PC9zdHlsZT4KICAgICAgICAgIGAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB9CiAgICAgICAgICAgICAgICAgICAgICAgICAgICBdCiAgICAgICAgICAgICAgICAgICAgICAgIH0=]]></fileData>
+            <fileData><![CDATA[eyJwcm9qZWN0cyI6IFsgeyJpZCI6IDEsICJkYXRhIjogeyJhc3NldHMiOiBbXSwgInN0eWxlcyI6IFtdLCAicGFnZXMiOiBbeyJjb21wb25lbnQiOiAiPGRpdj5Jbml0aWFsIGNvbnRlbnQ8L2Rpdj4ifV19IH0gXX0=]]></fileData>
         </file>
     </dbResources>
 </entity-facade-xml>
