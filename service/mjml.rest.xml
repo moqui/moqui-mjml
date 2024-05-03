@@ -19,8 +19,8 @@ along with this software (see the LICENSE.md file). If not, see
         name="moqui-mjml" displayName="Mjml REST API" version="0.0.0">
 
     <resource name="mjml">
-        <method type="get"><service name="moqui.mjml.MjmlServices.get#GrapeJs"/></method>
-        <method type="post"><service name="moqui.mjml.MjmlServices.store#GrapeJs"/></method>
+        <method type="get"><service name="mjml.MjmlServices.load#GrapeJs"/></method>
+        <method type="post"><service name="mjml.MjmlServices.store#GrapeJs"/></method>
     </resource>
 
 </resource>

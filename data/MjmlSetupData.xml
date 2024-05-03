@@ -36,5 +36,11 @@ along with this software (see the LICENSE.md file). If not, see
 
     <moqui.resource.DbResource resourceId="GRAPESJS" filename="grapesjs" isFile="N"/>
     <moqui.resource.DbResource resourceId="GRAPESJS_PROJECT" filename="project" isFile="N" parentResourceId="GRAPESJS"/>
+    <moqui.resource.DbResource resourceId="GRAPESJS_TEMPLATE" filename="template" isFile="N" parentResourceId="GRAPESJS"/>
 
+    <dbResources resourceId="GRAPESJS_TEMPLATE_DEFAULT" filename="default" isFile="Y" parentResourceId="GRAPESJS_TEMPLATE">
+        <file rootVersionName="01" mimeType="text/json" versionName="01">
+            <fileData><![CDATA[ewogICAgICAgICAgICAgICAgICAgICAgICAgICAgcGFnZXM6IFsKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB7CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIGNvbXBvbmVudDogYAogICAgICAgICAgICA8ZGl2IGNsYXNzPSJ0ZXN0Ij5Jbml0aWFsIGNvbnRlbnQ8L2Rpdj4KICAgICAgICAgICAgPHN0eWxlPi50ZXN0IHsgY29sb3I6IHJlZCB9PC9zdHlsZT4KICAgICAgICAgIGAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB9CiAgICAgICAgICAgICAgICAgICAgICAgICAgICBdCiAgICAgICAgICAgICAgICAgICAgICAgIH0=]]></fileData>
+        </file>
+    </dbResources>
 </entity-facade-xml>

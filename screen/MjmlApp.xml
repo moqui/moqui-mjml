@@ -179,9 +179,18 @@ along with this software (see the LICENSE.md file). If not, see
                 // Wait for the plugin to be injected by the dev server
                 window.onload = () => {
                     const resourceId = new URLSearchParams(window.location.search).get('resourceId');
-                    const projectEndpoint = `${baseLinkUrl}/mjml/handleGrapeJs?resourceId=${resourceId}`;
 
                     window.editor = grapesjs.init({
+          //               projectData: {
+          //                   pages: [
+          //                       {
+          //                           component: `
+          //   <div class="test">Initial content</div>
+          //   <style>.test { color: red }</style>
+          // `
+          //                       }
+          //                   ]
+          //               },
                         height: '100%',
                         noticeOnUnload: false,
                         // Default configurations
@@ -205,8 +214,21 @@ along with this software (see the LICENSE.md file). If not, see
                                     // As the API stores projects in this format `{id: 1, data: projectData }`,
                                     // we have to properly update the body before the store and extract the
                                     // project data from the response result.
-                                    onStore: data => ({ resourceId: resourceId, data }),
-                                    onLoad: result => result.data,
+                                    onStore: data => {
+                                        console.log('onStore', ({ id: resourceId, data }))
+                                        console.log('resourceId', resourceId)
+                                        // const url = new URL(window.location.href)
+                                        // url.searchParams.set('resourceId', resourceId);
+                                        // window.history.pushState({}, '', url)
+                                        return { id: resourceId, data }
+                                    },
+                                    onLoad: result => {
+                                        const url = new URL(window.location.href)
+                                        url.searchParams.set('resourceId', result.resourceId);
+                                        window.history.pushState({}, '', url)
+                                        console.log('onLoad', result.data)
+                                        return result.data
+                                    },
                                 },
                             }
                         },
