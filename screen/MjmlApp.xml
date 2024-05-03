@@ -180,17 +180,25 @@ along with this software (see the LICENSE.md file). If not, see
                 window.onload = () => {
                     window.resourceId = new URLSearchParams(window.location.search).get('resourceId');
 
+                    const request = new XMLHttpRequest();
+                    request.open("GET", "${baseLinkUrl}/rest/s1/moqui-mjml/mjml?resourceId="+window.resourceId, false); // `false` makes the request synchronous
+                    request.send(null);
+
+                    let response;
+                    if (request.status === 200) {
+                        response = JSON.parse(request.responseText);
+                    }
+                    // console.log('response ', response)
+                    window.resourceId = response.resourceId;
+                    const url = new URL(window.location.href)
+                    url.searchParams.set('resourceId', window.resourceId);
+                    window.history.pushState({}, '', url)
+
+                    const projectData = JSON.parse(response.data);
+                    // console.log('window.projectData ', window.projectData)
+
                     window.editor = grapesjs.init({
-          //               projectData: {
-          //                   pages: [
-          //                       {
-          //                           component: `
-          //   <div class="test">Initial content</div>
-          //   <style>.test { color: red }</style>
-          // `
-          //                       }
-          //                   ]
-          //               },
+                        projectData: projectData,
                         height: '100%',
                         noticeOnUnload: false,
                         // Default configurations
@@ -203,8 +211,8 @@ along with this software (see the LICENSE.md file). If not, see
                             // Default storage options
                             options: {
                                 remote: {
-                                    urlLoad: "${baseLinkUrl}/rest/s1/moqui-mjml/mjml?resourceId=" + resourceId,
-                                    urlStore: "${baseLinkUrl}/rest/s1/moqui-mjml/mjml?resourceId=" + resourceId,
+                                    urlLoad: "${baseLinkUrl}/rest/s1/moqui-mjml/mjml?resourceId=" + window.resourceId,
+                                    urlStore: "${baseLinkUrl}/rest/s1/moqui-mjml/mjml?resourceId=" + window.resourceId,
                                     headers: {
                                         "X-CSRF-Token": document.getElementById('confMoquiSessionToken').value
                                     },
@@ -215,21 +223,16 @@ along with this software (see the LICENSE.md file). If not, see
                                     // we have to properly update the body before the store and extract the
                                     // project data from the response result.
                                     onStore: data => {
-                                        console.log('onStore', ({ id: resourceId, data }))
-                                        console.log('onStore resourceId', window.resourceId)
-                                        console.log('onStore editor', editor)
-                                        console.log('onStore this ', this)
-                                        // const url = new URL(window.location.href)
-                                        // url.searchParams.set('resourceId', resourceId);
-                                        // window.history.pushState({}, '', url)
-                                        return { id: resourceId, data }
+                                        return { id: window.resourceId, data }
                                     },
                                     onLoad: result => {
-                                        const url = new URL(window.location.href)
-                                        url.searchParams.set('resourceId', result.resourceId);
-                                        window.history.pushState({}, '', url)
-                                        window.resourceId = result.resourceId;
-                                        console.log('onLoad ', result)
+                                        if (result.resourceId !== null) {
+                                            const url = new URL(window.location.href)
+                                            url.searchParams.set('resourceId', result.resourceId);
+                                            window.history.pushState({}, '', url)
+                                            window.resourceId = result.resourceId;
+                                        }
+                                        // console.log('onLoad ', result)
                                         return result.data
                                     },
                                 },

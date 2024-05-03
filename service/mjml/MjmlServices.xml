@@ -32,9 +32,9 @@ along with this software (see the LICENSE.md file). If not, see
                 <then>
                     <set field="grapesJsResource" from="ec.resource.getLocationReference('dbresource://grapesjs/project')"/>
                     <service-call name="create#moqui.resource.DbResource" in-map="[parentResourceId:grapesJsResource.getDbResourceId(),isFile:'Y']" out-map="dbResource"/>
-                    <service-call name="update#moqui.resource.DbResource" in-map="[resourceId:dbResource.resourceId,filename:dbResource.resourceId]" out-map="dbResource"/>
+                    <service-call name="update#moqui.resource.DbResource" in-map="[resourceId:dbResource.resourceId,filename:dbResource.resourceId+'.json']" out-map="dbResource"/>
                     <set field="versionName" value="01"/>
-                    <set field="defaultFile" from="ec.resource.getLocationReference('dbresource://grapesjs/template/default')"/>
+                    <set field="defaultFile" from="ec.resource.getLocationReference('dbresource://grapesjs/template/default.json')"/>
                     <set field="data" from="defaultFile.getText()"/>
                     <service-call name="create#moqui.resource.DbResourceFile" in-map="[resourceId: dbResource.resourceId,mimeType: 'text/json',versionName: versionName,rootVersionName: versionName,fileData:data]"/>
                     <service-call name="create#moqui.resource.DbResourceFileHistory" in-map="[resourceId: dbResource.resourceId,versionDate: ec.user.nowTimestamp,userId: ec.user.userId,isDiff: 'N']"/>
@@ -93,7 +93,8 @@ along with this software (see the LICENSE.md file). If not, see
             <if condition="resourceId == 'null'"><set field="resourceId" from="null"/></if>
 <!--            <log level="warn" message="resourceId is ${resourceId} resourceId.getClass().getName() ${resourceId.getClass().getName()} resourceId == 'null' ${resourceId == 'null'} resourceId == null ${resourceId == null}"/>-->
 <!--            <log level="warn" message="store#GrapeJs ec.web.secureRequestParameters._requestBodyText ${ec.web.secureRequestParameters._requestBodyText}"/>-->
-            <set field="data" from="new groovy.json.JsonSlurper().parseText(ec.web.secureRequestParameters._requestBodyText).data.toString()"/>
+            <set field="data" from="groovy.json.JsonOutput.toJson(new groovy.json.JsonSlurper().parseText(ec.web.secureRequestParameters._requestBodyText).data)"/>
+<!--            <log level="warn" message="store#GrapeJs data ${data}"/>-->
 
 <!--            <log level="warn" message="store context.toString() ${context.toString()}"/>-->
             <if condition="!resourceId">
@@ -101,7 +102,7 @@ along with this software (see the LICENSE.md file). If not, see
 <!--                    <log level="warn" message="resourceId is null"/>-->
                     <set field="grapesJsResource" from="ec.resource.getLocationReference('dbresource://grapesjs/project')"/>
                     <service-call name="create#moqui.resource.DbResource" in-map="[parentResourceId:grapesJsResource.getDbResourceId(),isFile:'Y']" out-map="dbResource"/>
-                    <service-call name="update#moqui.resource.DbResource" in-map="[resourceId:dbResource.resourceId,filename:dbResource.resourceId]" out-map="dbResource"/>
+                    <service-call name="update#moqui.resource.DbResource" in-map="[resourceId:dbResource.resourceId,filename:dbResource.resourceId+'.json']" out-map="dbResource"/>
                     <set field="versionName" value="01"/>
                     <service-call name="create#moqui.resource.DbResourceFile" in-map="[resourceId: dbResource.resourceId,mimeType: 'text/json',versionName: versionName,rootVersionName: versionName,fileData:data]"/>
                     <service-call name="create#moqui.resource.DbResourceFileHistory" in-map="[resourceId: dbResource.resourceId,versionDate: ec.user.nowTimestamp,userId: ec.user.userId,isDiff: 'N']"/>
