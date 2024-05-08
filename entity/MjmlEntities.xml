@@ -16,7 +16,7 @@ along with this software (see the LICENSE.md file). If not, see
 
     <extend-entity entity-name="ProductStoreEmail" package="mantle.product.store">
         <field name="resourceId" type="id"/>
-        <relationship type="one" related="mantle.resource.DbResource" short-alias="dbResource"/>
+        <relationship type="one" related="moqui.resource.DbResource" short-alias="dbResource"/>
     </extend-entity>
 
 </entities>
