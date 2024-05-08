@@ -7,3 +7,11 @@ Mjml Component with:
 To install run (with moqui-framework):
 
     $ ./gradlew getComponent -Pcomponent=moqui-mjml
+
+### Setup
+
+- Have all email templates setup as 
+
+### Setup
+
+- Have all email templates setup as 

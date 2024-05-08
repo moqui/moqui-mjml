@@ -14,4 +14,10 @@ along with this software (see the LICENSE.md file). If not, see
 -->
 <screen-extend xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://moqui.org/xsd/xml-screen-3.xsd">
 
+    <form-list name="StoreEmailsForm">
+        <field name="editEmailTemplate"><default-field>
+            <link url="/mjml" url-type="plain" text="Edit Email Template"/>
+        </default-field></field>
+    </form-list>
+
 </screen-extend>
