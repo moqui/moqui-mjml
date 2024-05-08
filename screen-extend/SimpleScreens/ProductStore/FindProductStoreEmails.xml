@@ -14,9 +14,16 @@ along with this software (see the LICENSE.md file). If not, see
 -->
 <screen-extend xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://moqui.org/xsd/xml-screen-3.xsd">
 
+    <actions-extend type="actions" when="replace">
+        <entity-find entity-name="mantle.product.store.ProductStoreEmailDetail" list="storeEmails">
+            <search-form-inputs default-order-by="emailTypeEnumId"/>
+            <econdition field-name="productStoreId"/>
+        </entity-find>
+    </actions-extend>
+
     <form-list name="StoreEmailsForm">
         <field name="editEmailTemplate" align="center"><default-field>
-            <link url="/mjml" parameter-map="[resourceId:resourceId]" url-type="plain" text="Edit Template"/>
+            <link url="/mjml" parameter-map="[resourceId:resourceId,emailTemplateId:emailTemplateId]" url-type="plain" text="Edit Template"/>
         </default-field></field>
     </form-list>
 

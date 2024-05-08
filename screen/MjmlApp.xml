@@ -179,9 +179,10 @@ along with this software (see the LICENSE.md file). If not, see
                 // Wait for the plugin to be injected by the dev server
                 window.onload = () => {
                     window.resourceId = new URLSearchParams(window.location.search).get('resourceId');
+                    window.emailTemplateId = new URLSearchParams(window.location.search).get('emailTemplateId');
 
                     const request = new XMLHttpRequest();
-                    request.open("GET", "${baseLinkUrl}/rest/s1/moqui-mjml/mjml?resourceId="+window.resourceId, false); // `false` makes the request synchronous
+                    request.open("GET", ("${baseLinkUrl}/rest/s1/moqui-mjml/mjml?resourceId="+window.resourceId+"&emailTemplateId="+window.emailTemplateId), false); // `false` makes the request synchronous
                     request.send(null);
 
                     let response;

@@ -18,6 +18,7 @@ along with this software (see the LICENSE.md file). If not, see
         <description>Create MJML</description>
         <in-parameters>
             <parameter name="resourceId"/>
+            <parameter name="emailTemplateId"/>
         </in-parameters>
         <out-parameters>
             <parameter name="resourceId"/>
@@ -25,8 +26,8 @@ along with this software (see the LICENSE.md file). If not, see
         </out-parameters>
         <actions>
             <if condition="resourceId == 'null'"><set field="resourceId" from="null"/></if>
-            <log level="warn" message="resourceId is ${resourceId} resourceId.getClass().getName() ${resourceId.getClass().getName()} resourceId == 'null' ${resourceId == 'null'} resourceId == null ${resourceId == null}"/>
-            <log level="warn" message="load context.toString() ${context.toString()}"/>
+<!--            <log level="warn" message="resourceId is ${resourceId} resourceId.getClass().getName() ${resourceId.getClass().getName()} resourceId == 'null' ${resourceId == 'null'} resourceId == null ${resourceId == null}"/>-->
+<!--            <log level="warn" message="load context.toString() ${context.toString()}"/>-->
 
             <if condition="!resourceId">
                 <then>
@@ -39,6 +40,10 @@ along with this software (see the LICENSE.md file). If not, see
                     <service-call name="create#moqui.resource.DbResourceFile" in-map="[resourceId: dbResource.resourceId,mimeType: 'text/json',versionName: versionName,rootVersionName: versionName,fileData:data]"/>
                     <service-call name="create#moqui.resource.DbResourceFileHistory" in-map="[resourceId: dbResource.resourceId,versionDate: ec.user.nowTimestamp,userId: ec.user.userId,isDiff: 'N']"/>
                     <set field="resourceId" from="dbResource.resourceId"/>
+
+                    <if condition="emailTemplateId">
+                        <service-call name="update#moqui.basic.email.EmailTemplate" in-map="[emailTemplateId:emailTemplateId,resourceId:resourceId]"/>
+                    </if>
 <!--                    <set field="resourceId" from="null"/>-->
 <!--                    <set field="data" from="null"/>-->
                 </then>
