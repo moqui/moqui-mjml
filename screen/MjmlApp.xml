@@ -224,7 +224,7 @@ along with this software (see the LICENSE.md file). If not, see
                                     // we have to properly update the body before the store and extract the
                                     // project data from the response result.
                                     onStore: data => {
-                                        return { id: window.resourceId, data }
+                                        return { id: window.resourceId, data, html:window.editor.runCommand('mjml-code-to-html')?.html }
                                     },
                                     onLoad: result => {
                                         if (result.resourceId !== null) {

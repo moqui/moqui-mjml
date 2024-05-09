@@ -28,6 +28,15 @@ along with this software (see the LICENSE.md file). If not, see
             <if condition="resourceId == 'null'"><set field="resourceId" from="null"/></if>
 <!--            <log level="warn" message="resourceId is ${resourceId} resourceId.getClass().getName() ${resourceId.getClass().getName()} resourceId == 'null' ${resourceId == 'null'} resourceId == null ${resourceId == null}"/>-->
 <!--            <log level="warn" message="load context.toString() ${context.toString()}"/>-->
+            <if condition="emailTemplateId">
+                <entity-find-one entity-name="moqui.basic.email.EmailTemplate" value-field="emailTemplate" auto-field-map="[emailTemplateId:emailTemplateId]"/>
+                <if condition="!resourceId"><set field="resourceId" from="emailTemplate?.resourceId"/></if>
+                <if condition="resourceId != emailTemplate?.resourceId">
+                    <!-- This should almost never happen, but if it does it basically creates a resource leak for the previously used resource -->
+                    <log message="Changing resource id from ${resourceId} to ${emailTemplate?.resourceId} for email template ${emailTemplateId}"/>
+                    <service-call name="update#moqui.basic.email.EmailTemplate" in-map="[emailTemplateId:emailTemplateId,resourceId:resourceId]"/>
+                </if>
+            </if>
 
             <if condition="!resourceId">
                 <then>
@@ -88,23 +97,18 @@ along with this software (see the LICENSE.md file). If not, see
         <description>Create MJML</description>
         <in-parameters>
             <parameter name="resourceId"/>
-            <parameter name="data"></parameter>
+            <parameter name="data"/>
+            <parameter name="html" allow-html="any"/>
         </in-parameters>
         <out-parameters>
             <parameter name="resourceId"/>
         </out-parameters>
         <actions>
-<!--            <log level="warn" message="resourceId is ${resourceId} resourceId.getClass().getName() ${resourceId.getClass().getName()} resourceId == 'null' ${resourceId == 'null'} resourceId == null ${resourceId == null}"/>-->
             <if condition="resourceId == 'null'"><set field="resourceId" from="null"/></if>
-<!--            <log level="warn" message="resourceId is ${resourceId} resourceId.getClass().getName() ${resourceId.getClass().getName()} resourceId == 'null' ${resourceId == 'null'} resourceId == null ${resourceId == null}"/>-->
-<!--            <log level="warn" message="store#GrapeJs ec.web.secureRequestParameters._requestBodyText ${ec.web.secureRequestParameters._requestBodyText}"/>-->
             <set field="data" from="groovy.json.JsonOutput.toJson(new groovy.json.JsonSlurper().parseText(ec.web.secureRequestParameters._requestBodyText).data)"/>
-<!--            <log level="warn" message="store#GrapeJs data ${data}"/>-->
 
-<!--            <log level="warn" message="store context.toString() ${context.toString()}"/>-->
             <if condition="!resourceId">
                 <then>
-<!--                    <log level="warn" message="resourceId is null"/>-->
                     <set field="grapesJsResource" from="ec.resource.getLocationReference('dbresource://grapesjs/project')"/>
                     <service-call name="create#moqui.resource.DbResource" in-map="[parentResourceId:grapesJsResource.getDbResourceId(),isFile:'Y']" out-map="dbResource"/>
                     <service-call name="update#moqui.resource.DbResource" in-map="[resourceId:dbResource.resourceId,filename:dbResource.resourceId+'.json']" out-map="dbResource"/>
@@ -112,25 +116,23 @@ along with this software (see the LICENSE.md file). If not, see
                     <service-call name="create#moqui.resource.DbResourceFile" in-map="[resourceId: dbResource.resourceId,mimeType: 'text/json',versionName: versionName,rootVersionName: versionName,fileData:data]"/>
                     <service-call name="create#moqui.resource.DbResourceFileHistory" in-map="[resourceId: dbResource.resourceId,versionDate: ec.user.nowTimestamp,userId: ec.user.userId,isDiff: 'N']"/>
                     <set field="resourceId" from="dbResource.resourceId"/>
+
+                    <set field="htmlFile" from="grapesJsResource.makeFile(resourceId.toString()+'.html')"/>
+                    <script><![CDATA[htmlFile.putText(html)]]></script>
                 </then>
                 <else>
-<!--                    <log level="warn" message="resourceId is ${resourceId}"/>-->
                     <entity-find-one entity-name="moqui.resource.DbResource" value-field="dbResource" auto-field-map="[resourceId:resourceId]"/>
-<!--                    <log level="warn" message="dbResource ${dbResource}"/>-->
                     <if condition="!dbResource">
                         <return error="true" message="Resource not found"/>
                     </if>
                     <set field="actualDbResourcePath" from="null"/>
                     <set field="dbResourcePath" from="dbResource.filename"/>
                     <set field="lastDbResource" from="dbResource"/>
-<!--                    <log level="warn" message="lastDbResource ${lastDbResource}"/>-->
                     <script>
                         while (actualDbResourcePath == null) {
-//                            ec.logger.warn('dbResourcePath: '+dbResourcePath)
                             if (lastDbResource.parentResourceId == null) {
                                 dbResourcePath = 'dbresource://'+dbResourcePath
                                 actualDbResourcePath = dbResourcePath
-//                                ec.logger.warn('actualDbResourcePath: '+actualDbResourcePath)
                             } else {
                                 lastDbResource = ec.entity.fastFindOne("moqui.resource.DbResource", true, false, lastDbResource.parentResourceId)
                                 dbResourcePath = lastDbResource.filename+'/'+dbResourcePath
@@ -141,6 +143,10 @@ along with this software (see the LICENSE.md file). If not, see
                     <script>
                         putDbResource.putText(data)
                     </script>
+
+                    <set field="grapesJsResource" from="ec.resource.getLocationReference('dbresource://grapesjs/project')"/>
+                    <set field="htmlFile" from="grapesJsResource.findChildFile(resourceId.toString()+'.html') ?: grapesJsResource.makeFile(resourceId.toString()+'.html')"/>
+                    <script><![CDATA[htmlFile.putText(html)]]></script>
 
                 </else>
             </if>
