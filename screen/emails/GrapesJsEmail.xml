@@ -17,32 +17,11 @@ along with this software (see the LICENSE.md file). If not, see
 
     <actions>
         <entity-find-one entity-name="moqui.basic.email.EmailTemplate" value-field="emailTemplate" auto-field-map="[emailTemplateId:emailTemplateId]"/>
-        <entity-find-one entity-name="moqui.resource.DbResource" value-field="dbResource" auto-field-map="[resourceId:emailTemplate.resourceId]"/>
-        <!--                    <log level="warn" message="dbResource ${dbResource}"/>-->
-        <if condition="!dbResource">
-            <return error="true" message="Resource not found"/>
+        <if condition="!emailTemplate">
+            <return error="true" message="Email Template not found"/>
         </if>
-        <set field="actualDbResourcePath" from="null"/>
-        <set field="dbResourcePath" from="dbResource.filename"/>
-        <set field="lastDbResource" from="dbResource"/>
-        <!--                    <log level="warn" message="lastDbResource ${lastDbResource}"/>-->
-        <script>
-            while (actualDbResourcePath == null) {
-//                            ec.logger.warn('dbResourcePath: '+dbResourcePath)
-                if (lastDbResource.parentResourceId == null) {
-                    dbResourcePath = 'dbresource://'+dbResourcePath
-                    actualDbResourcePath = dbResourcePath
-//                                ec.logger.warn('actualDbResourcePath: '+actualDbResourcePath)
-                } else {
-                    lastDbResource = ec.entity.fastFindOne("moqui.resource.DbResource", true, false, lastDbResource.parentResourceId)
-                    dbResourcePath = lastDbResource.filename+'/'+dbResourcePath
-                }
-            }
-        </script>
-        <set field="htmlDbResourcePath" from="actualDbResourcePath - '.json' + '.html'"/>
-        <set field="renderedText" from="ec.resource.template(htmlDbResourcePath, 'ftl')"/>
 
-        <log level="warn" message="GrapesJsEmail context.toString(): ${context.toString()}"/>
+        <set field="renderedText" from="ec.resource.template(emailTemplate.htmlLocation, 'ftl')"/>
     </actions>
 
     <widgets>
