@@ -13,13 +13,8 @@ along with this software (see the LICENSE.md file). If not, see
 <http://creativecommons.org/publicdomain/zero/1.0/>.
 -->
 <entity-facade-xml type="seed-initial">
-    <!-- NOTE: subscreen configuration is now in the MoquiConf.xml file instead of DB records
-    <moqui.screen.SubscreensItem screenLocation="component://webroot/screen/webroot/apps.xml" subscreenName="mjml" menuTitle="Example"
-            menuIndex="97" menuInclude="Y" subscreenLocation="component://mjml/screen/MjmlApp.xml"/>
-    -->
-
     <!-- Artifact group for all of the Moqui Mjml application via the MoquiMjmlApp screen (the root screen for the app) -->
-    <moqui.security.ArtifactGroup artifactGroupId="MOQUI_MJML_APP" description="Moqui Mjml App (via root screen)"/>
+    <moqui.security.ArtifactGroup artifactGroupId="MOQUI_MJML_APP" description="Moqui Mjml App"/>
     <moqui.security.ArtifactGroupMember artifactGroupId="MOQUI_MJML_APP" artifactTypeEnumId="AT_XML_SCREEN"
             inheritAuthz="Y" artifactName="component://moqui-mjml/screen/MjmlApp.xml"/>
     <!-- Full permissions for the ADMIN user group -->
@@ -27,7 +22,7 @@ along with this software (see the LICENSE.md file). If not, see
             authzTypeEnumId="AUTHZT_ALWAYS" authzActionEnumId="AUTHZA_ALL"/>
 
     <!-- Artifact group for all of the Moqui Mjml REST API via the mjml resource (the root resource) -->
-    <moqui.security.ArtifactGroup artifactGroupId="MOQUI_MJML_API" description="Example REST API (via root resource)"/>
+    <moqui.security.ArtifactGroup artifactGroupId="MOQUI_MJML_API" description="Moqui MJML REST API"/>
     <moqui.security.ArtifactGroupMember artifactGroupId="MOQUI_MJML_API" artifactTypeEnumId="AT_REST_PATH"
             inheritAuthz="Y" artifactName="/moqui-mjml/mjml"/>
     <!-- Full permissions for the ADMIN user group -->

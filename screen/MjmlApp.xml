@@ -16,20 +16,8 @@ along with this software (see the LICENSE.md file). If not, see
         xsi:noNamespaceSchemaLocation="http://moqui.org/xsd/xml-screen-3.xsd"
         menu-image="fa fa-flash" menu-image-type="icon" standalone="true" screen-theme-type-enum-id="STT_MJML" >
 
-    <parameter name="resourceId"/>
-
-    <transition name="handleGrapeJs" read-only="true" method="get">
-        <actions>
-            <log level="warn" message="context.toString() ${context.toString()}"/>
-            <service-call name="moqui.MjmlServices.get#GrapeJs" in-map="[resourceId:resourceId]" out-map="context"/>
-        </actions>
-        <default-response url="."/></transition>
-    <transition name="handleGrapeJs" read-only="true" method="post">
-        <actions>
-            <log level="warn" message="context.toString() ${context.toString()}"/>
-            <service-call name="moqui.MjmlServices.store#GrapeJs" in-map="context" out-map="context"/>
-        </actions>
-        <default-response url="."/></transition>
+    <parameter name="grapesLocation"/>
+    <parameter name="htmlLocation"/>
 
     <actions>
         <set field="baseLinkUrl" from="!'production'.equals(System.getProperty('instance_purpose')) ? 'http://localhost:8080' : ec.web.getWebappRootUrl(true,true)"/>
@@ -178,11 +166,12 @@ along with this software (see the LICENSE.md file). If not, see
             <script type="text/javascript">
                 // Wait for the plugin to be injected by the dev server
                 window.onload = () => {
-                    window.resourceId = new URLSearchParams(window.location.search).get('resourceId');
+                    window.htmlLocation = new URLSearchParams(window.location.search).get('htmlLocation');
+                    window.grapesLocation = new URLSearchParams(window.location.search).get('grapesLocation');
                     window.emailTemplateId = new URLSearchParams(window.location.search).get('emailTemplateId');
 
                     const request = new XMLHttpRequest();
-                    request.open("GET", ("${baseLinkUrl}/rest/s1/moqui-mjml/mjml?resourceId="+window.resourceId+"&emailTemplateId="+window.emailTemplateId), false); // `false` makes the request synchronous
+                    request.open("GET", ("${baseLinkUrl}/rest/s1/moqui-mjml/mjml?grapesLocation="+window.grapesLocation+"&htmlLocation="+window.htmlLocation+"&emailTemplateId="+window.emailTemplateId), false); // `false` makes the request synchronous
                     request.send(null);
 
                     let response;
@@ -212,8 +201,8 @@ along with this software (see the LICENSE.md file). If not, see
                             // Default storage options
                             options: {
                                 remote: {
-                                    urlLoad: "${baseLinkUrl}/rest/s1/moqui-mjml/mjml?resourceId=" + window.resourceId,
-                                    urlStore: "${baseLinkUrl}/rest/s1/moqui-mjml/mjml?resourceId=" + window.resourceId,
+                                    urlLoad: "${baseLinkUrl}/rest/s1/moqui-mjml/mjml?grapesLocation="+window.grapesLocation+"&htmlLocation="+window.htmlLocation,
+                                    urlStore: "${baseLinkUrl}/rest/s1/moqui-mjml/mjml?grapesLocation="+window.grapesLocation+"&htmlLocation="+window.htmlLocation,
                                     headers: {
                                         "X-CSRF-Token": document.getElementById('confMoquiSessionToken').value
                                     },
@@ -224,14 +213,16 @@ along with this software (see the LICENSE.md file). If not, see
                                     // we have to properly update the body before the store and extract the
                                     // project data from the response result.
                                     onStore: data => {
-                                        return { id: window.resourceId, data, html:window.editor.runCommand('mjml-code-to-html')?.html }
+                                        return { id: window.grapesLocation, data, html:window.editor.runCommand('mjml-code-to-html')?.html }
                                     },
                                     onLoad: result => {
                                         if (result.resourceId !== null) {
                                             const url = new URL(window.location.href)
-                                            url.searchParams.set('resourceId', result.resourceId);
+                                            url.searchParams.set('grapesLocation', result.grapesLocation);
+                                            url.searchParams.set('htmlLocation', result.htmlLocation);
                                             window.history.pushState({}, '', url)
-                                            window.resourceId = result.resourceId;
+                                            window.grapesLocation = result.grapesLocation;
+                                            window.htmlLocation = result.htmlLocation;
                                         }
                                         // console.log('onLoad ', result)
                                         return result.data

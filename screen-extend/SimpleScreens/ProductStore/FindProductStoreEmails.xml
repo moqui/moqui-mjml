@@ -23,7 +23,7 @@ along with this software (see the LICENSE.md file). If not, see
 
     <form-list name="StoreEmailsForm">
         <field name="editEmailTemplate" align="center"><default-field>
-            <link url="/mjml" parameter-map="[resourceId:resourceId,emailTemplateId:emailTemplateId]" url-type="plain" text="Edit Template"/>
+            <link url="/mjml" parameter-map="[grapesLocation:grapesLocation,htmlLocation:htmlLocation,emailTemplateId:emailTemplateId]" url-type="plain" text="Edit Template"/>
         </default-field></field>
     </form-list>
 
