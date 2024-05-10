@@ -15,11 +15,11 @@ along with this software (see the LICENSE.md file). If not, see
 <services xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://moqui.org/xsd/service-definition-3.xsd">
 
     <service verb="load" noun="GrapeJs">
-        <description>Create MJML</description>
+        <description>Load GrapesJs resource. Can be adapted to entity other than EmailTemplate, but must have data for the grapesLocation and htmlLocation to ensure safety of read and write of resources.</description>
         <in-parameters>
             <parameter name="grapesLocation"/>
             <parameter name="htmlLocation"/>
-            <parameter name="emailTemplateId"/>
+            <parameter name="emailTemplateId" required="true"/>
         </in-parameters>
         <out-parameters>
             <parameter name="grapesLocation"/>
@@ -31,21 +31,10 @@ along with this software (see the LICENSE.md file). If not, see
             <if condition="htmlLocation == 'null'"><set field="htmlLocation" from="null"/></if>
 <!--            <log level="warn" message="resourceId is ${resourceId} resourceId.getClass().getName() ${resourceId.getClass().getName()} resourceId == 'null' ${resourceId == 'null'} resourceId == null ${resourceId == null}"/>-->
 <!--            <log level="warn" message="load context.toString() ${context.toString()}"/>-->
-            <if condition="emailTemplateId">
-                <entity-find-one entity-name="moqui.basic.email.EmailTemplate" value-field="emailTemplate" auto-field-map="[emailTemplateId:emailTemplateId]"/>
-                <if condition="!grapesLocation"><set field="grapesLocation" from="emailTemplate?.grapesLocation"/></if>
-                <if condition="grapesLocation &amp;&amp; grapesLocation != emailTemplate?.grapesLocation">
-                    <!-- This should almost never happen, but if it does it basically creates a resource leak for the previously used resource -->
-                    <log message="Changing resource id from ${grapesLocation} to ${emailTemplate?.grapesLocation} for email template ${emailTemplateId}"/>
-                    <service-call name="update#moqui.basic.email.EmailTemplate" in-map="[emailTemplateId:emailTemplateId,grapesLocation:grapesLocation]"/>
-                </if>
-                <if condition="!htmlLocation"><set field="htmlLocation" from="emailTemplate?.htmlLocation"/></if>
-                <if condition="htmlLocation &amp;&amp; htmlLocation != emailTemplate?.htmlLocation">
-                    <!-- This should almost never happen, but if it does it basically creates a resource leak for the previously used resource -->
-                    <log message="Changing resource id from ${htmlLocation} to ${emailTemplate?.htmlLocation} for email template ${emailTemplateId}"/>
-                    <service-call name="update#moqui.basic.email.EmailTemplate" in-map="[emailTemplateId:emailTemplateId,htmlLocation:htmlLocation]"/>
-                </if>
-            </if>
+            <entity-find-one entity-name="moqui.basic.email.EmailTemplate" value-field="emailTemplate" auto-field-map="[emailTemplateId:emailTemplateId]"/>
+            <if condition="!emailTemplate"><return error="true" message="Resource not found"/></if>
+            <set field="grapesLocation" from="emailTemplate?.grapesLocation"/>
+            <set field="htmlLocation" from="emailTemplate?.htmlLocation"/>
 
             <set field="grapesJsResource" from="ec.resource.getLocationReference('dbresource://grapesjs/project')"/>
             <if condition="!grapesLocation &amp;&amp; !htmlLocation">
@@ -62,11 +51,9 @@ along with this software (see the LICENSE.md file). If not, see
                         grapesFile.move(grapesLocation)
                         ]]></script>
 
-                    <if condition="emailTemplateId">
-                        <service-call name="update#moqui.basic.email.EmailTemplate" in-map="[emailTemplateId:emailTemplateId,grapesLocation:grapesLocation,htmlLocation:htmlLocation]"/>
-                    </if>
+                    <service-call name="update#moqui.basic.email.EmailTemplate" in-map="[emailTemplateId:emailTemplateId,grapesLocation:grapesLocation,htmlLocation:htmlLocation]"/>
                 </then>
-                <else>
+                <else-if condition="grapesLocation &amp;&amp; htmlLocation">
                     <set field="putDbResource" from="ec.resource.getLocationReference(grapesLocation)"/>
                     <!-- TODO: Is this a strong enough check to prevent unauthorized access? -->
                     <if condition="!putDbResource || putDbResource.parent?.location != grapesJsResource.location">
@@ -74,65 +61,90 @@ along with this software (see the LICENSE.md file). If not, see
                     </if>
 
                     <set field="data" from="putDbResource.getText()"/>
+                </else-if>
+                <else>
+                    <return error="true" message="Resource not found"/>
                 </else>
             </if>
         </actions>
     </service>
     <service verb="store" noun="GrapeJs" authenticate="anonymous-all">
-        <description>Create MJML</description>
+        <description>Store GrapesJs resource. Can be adapted to entity other than EmailTemplate, but must have data for the grapesLocation and htmlLocation to ensure safety of read and write of resources.</description>
         <in-parameters>
-            <parameter name="resourceId"/>
+            <parameter name="htmlLocation"/>
+            <parameter name="grapesLocation"/>
+            <parameter name="emailTemplateId"/>
             <parameter name="data"/>
             <parameter name="html" allow-html="any"/>
         </in-parameters>
         <out-parameters>
-            <parameter name="resourceId"/>
+            <parameter name="htmlLocation"/>
+            <parameter name="grapesLocation"/>
         </out-parameters>
         <actions>
-            <if condition="resourceId == 'null'"><set field="resourceId" from="null"/></if>
+            <if condition="htmlLocation == 'null'"><set field="htmlLocation" from="null"/></if>
+            <if condition="grapesLocation == 'null'"><set field="grapesLocation" from="null"/></if>
+            <entity-find-one entity-name="moqui.basic.email.EmailTemplate" value-field="emailTemplate" auto-field-map="[emailTemplateId:emailTemplateId]"/>
+            <if condition="!emailTemplate"><return error="true" message="Resource not found"/></if>
+            <set field="grapesLocation" from="emailTemplate?.grapesLocation"/>
+            <set field="htmlLocation" from="emailTemplate?.htmlLocation"/>
             <set field="data" from="groovy.json.JsonOutput.toJson(new groovy.json.JsonSlurper().parseText(ec.web.secureRequestParameters._requestBodyText).data)"/>
 
-            <if condition="!resourceId">
+            <set field="grapesJsResource" from="ec.resource.getLocationReference('dbresource://grapesjs/project')"/>
+            <if condition="!htmlLocation &amp;&amp; !grapesLocation">
                 <then>
-                    <set field="grapesJsResource" from="ec.resource.getLocationReference('dbresource://grapesjs/project')"/>
-                    <service-call name="create#moqui.resource.DbResource" in-map="[parentResourceId:grapesJsResource.getDbResourceId(),isFile:'Y']" out-map="dbResource"/>
-                    <service-call name="update#moqui.resource.DbResource" in-map="[resourceId:dbResource.resourceId,filename:dbResource.resourceId+'.json']" out-map="dbResource"/>
-                    <set field="versionName" value="01"/>
-                    <service-call name="create#moqui.resource.DbResourceFile" in-map="[resourceId: dbResource.resourceId,mimeType: 'text/json',versionName: versionName,rootVersionName: versionName,fileData:data]"/>
-                    <service-call name="create#moqui.resource.DbResourceFileHistory" in-map="[resourceId: dbResource.resourceId,versionDate: ec.user.nowTimestamp,userId: ec.user.userId,isDiff: 'N']"/>
-                    <set field="resourceId" from="dbResource.resourceId"/>
+<!--                TODO: This should work, but isn't used anywhere and is untested.
+                    <set field="htmlFile" from="grapesJsResource.makeFile(java.util.UUID.randomUUID().toString()+'.html')"/>
+                    <set field="grapesFile" from="grapesJsResource.makeFile(java.util.UUID.randomUUID().toString()+'.json')"/>
 
-                    <set field="htmlFile" from="grapesJsResource.makeFile(resourceId.toString()+'.html')"/>
-                    <script><![CDATA[htmlFile.putText(html)]]></script>
-                </then>
-                <else>
-                    <entity-find-one entity-name="moqui.resource.DbResource" value-field="dbResource" auto-field-map="[resourceId:resourceId]"/>
-                    <if condition="!dbResource">
+                    <set field="htmlLocation" from="grapesJsResource.location + '/' + htmlFile?.dbResourceId + '.html'"/>
+                    <set field="grapesLocation" from="grapesJsResource.location + '/' + grapesFile?.dbResourceId + '.json'"/>
+                    <if condition="ec.resource.getLocationReference(htmlLocation).parent?.location != grapesJsResource.location">
                         <return error="true" message="Resource not found"/>
                     </if>
-                    <set field="actualDbResourcePath" from="null"/>
-                    <set field="dbResourcePath" from="dbResource.filename"/>
-                    <set field="lastDbResource" from="dbResource"/>
-                    <script>
-                        while (actualDbResourcePath == null) {
-                            if (lastDbResource.parentResourceId == null) {
-                                dbResourcePath = 'dbresource://'+dbResourcePath
-                                actualDbResourcePath = dbResourcePath
-                            } else {
-                                lastDbResource = ec.entity.fastFindOne("moqui.resource.DbResource", true, false, lastDbResource.parentResourceId)
-                                dbResourcePath = lastDbResource.filename+'/'+dbResourcePath
-                            }
-                        }
-                    </script>
-                    <set field="putDbResource" from="ec.resource.getLocationReference(actualDbResourcePath)"/>
-                    <script>
-                        putDbResource.putText(data)
-                    </script>
+                    <if condition="ec.resource.getLocationReference(grapesLocation).parent?.location != grapesJsResource.location">
+                        <return error="true" message="Resource not found"/>
+                    </if>
+                    <script><![CDATA[
+                        htmlFile.putText(html)
+                        htmlFile.move(htmlLocation)
+                        grapesFile.putText(data)
+                        grapesFile.move(grapesLocation)
+                        ]]></script>-->
+                    <return error="true" message="Resource not found"/>
+                </then>
+                <else-if condition="grapesLocation">
+                    <set field="grapesFile" from="ec.resource.getLocationReference(grapesLocation)"/>
+                    <if condition="!grapesFile || grapesFile.parent?.location != grapesJsResource.location">
+                        <return error="true" message="Resource not found"/>
+                    </if>
+                    <script>grapesFile.putText(data)</script>
 
-                    <set field="grapesJsResource" from="ec.resource.getLocationReference('dbresource://grapesjs/project')"/>
-                    <set field="htmlFile" from="grapesJsResource.findChildFile(resourceId.toString()+'.html') ?: grapesJsResource.makeFile(resourceId.toString()+'.html')"/>
+                    <set field="htmlFile" from="null"/>
+                    <if condition="htmlLocation"><then>
+                        <set field="htmlFile" from="ec.resource.getLocationReference(htmlLocation)"/>
+                    </then><else>
+                        <entity-find entity-name="moqui.basic.email.EmailTemplate" list="emailTemplateList">
+                            <econdition field-name="grapesLocation"/>
+                            <order-by field-name="-lastUpdatedStamp"/></entity-find>
+                        <set field="emailTemplate" from="emailTemplateList.getFirst()"/>
+                        <if condition="emailTemplateList.size() == 1 &amp;&amp; emailTemplate.htmlLocation"><then>
+                            <set field="htmlFile" from="ec.resource.getLocationReference(emailTemplate.htmlLocation)"/>
+                        </then><else>
+                            <set field="htmlFile" from="grapesJsResource.makeFile(java.util.UUID.randomUUID().toString()+'.html')"/>
+                            <set field="htmlLocation" from="grapesJsResource.location + '/' + htmlFile?.dbResourceId + '.html'"/>
+                            <script><![CDATA[htmlFile.move(htmlLocation)]]></script>
+
+                            <service-call name="update#moqui.basic.email.EmailTemplate" in-map="[emailTemplateId:emailTemplateId,htmlLocation:htmlLocation]"/>
+                        </else></if>
+                    </else></if>
+                    <if condition="!htmlFile || htmlFile.parent?.location != grapesJsResource.location">
+                        <return error="true" message="Resource not found"/>
+                    </if>
                     <script><![CDATA[htmlFile.putText(html)]]></script>
-
+                </else-if>
+                <else>
+                    <return error="true" message="Resource not found"/>
                 </else>
             </if>
         </actions>

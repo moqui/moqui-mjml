@@ -171,7 +171,7 @@ along with this software (see the LICENSE.md file). If not, see
                     window.emailTemplateId = new URLSearchParams(window.location.search).get('emailTemplateId');
 
                     const request = new XMLHttpRequest();
-                    request.open("GET", ("${baseLinkUrl}/rest/s1/moqui-mjml/mjml?grapesLocation="+window.grapesLocation+"&htmlLocation="+window.htmlLocation+"&emailTemplateId="+window.emailTemplateId), false); // `false` makes the request synchronous
+                    request.open("GET", ("${baseLinkUrl}/rest/s1/moqui-mjml/mjml?emailTemplateId="+window.emailTemplateId), false); // `false` makes the request synchronous
                     request.send(null);
 
                     let response;
@@ -203,8 +203,8 @@ along with this software (see the LICENSE.md file). If not, see
                             // Default storage options
                             options: {
                                 remote: {
-                                    urlLoad: "${baseLinkUrl}/rest/s1/moqui-mjml/mjml?grapesLocation="+window.grapesLocation+"&htmlLocation="+window.htmlLocation,
-                                    urlStore: "${baseLinkUrl}/rest/s1/moqui-mjml/mjml?grapesLocation="+window.grapesLocation+"&htmlLocation="+window.htmlLocation,
+                                    urlLoad: "${baseLinkUrl}/rest/s1/moqui-mjml/mjml?emailTemplateId="+window.emailTemplateId,
+                                    urlStore: "${baseLinkUrl}/rest/s1/moqui-mjml/mjml?emailTemplateId="+window.emailTemplateId,
                                     headers: {
                                         "X-CSRF-Token": document.getElementById('confMoquiSessionToken').value
                                     },
@@ -222,9 +222,11 @@ along with this software (see the LICENSE.md file). If not, see
                                             const url = new URL(window.location.href)
                                             url.searchParams.set('grapesLocation', result.grapesLocation);
                                             url.searchParams.set('htmlLocation', result.htmlLocation);
+                                            url.searchParams.set('emailTemplateId', result.emailTemplateId);
                                             window.history.pushState({}, '', url)
                                             window.grapesLocation = result.grapesLocation;
                                             window.htmlLocation = result.htmlLocation;
+                                            window.emailTemplateId = result.emailTemplateId;
                                         }
                                         // console.log('onLoad ', result)
                                         return result.data
