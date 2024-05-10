@@ -48,19 +48,19 @@ along with this software (see the LICENSE.md file). If not, see
             </if>
 
             <set field="grapesJsResource" from="ec.resource.getLocationReference('dbresource://grapesjs/project')"/>
-            <if condition="!grapesLocation &amp;&amp; htmlLocation">
+            <if condition="!grapesLocation &amp;&amp; !htmlLocation">
                 <then>
-                    <set field="htmlFile" from="project.makeFile(java.util.UUID.randomUUID().toString()+'.html')"/>
-                    <set field="grapesFile" from="project.makeFile(java.util.UUID.randomUUID().toString()+'.json')"/>
+                    <set field="htmlFile" from="grapesJsResource.makeFile(java.util.UUID.randomUUID().toString()+'.html')"/>
+                    <set field="grapesFile" from="grapesJsResource.makeFile(java.util.UUID.randomUUID().toString()+'.json')"/>
 
                     <set field="data" from="ec.resource.getLocationReference('dbresource://grapesjs/template/default.json').getText()"/>
+                    <set field="htmlLocation" from="grapesJsResource.location + '/' + htmlFile?.dbResourceId + '.html'"/>
+                    <set field="grapesLocation" from="grapesJsResource.location + '/' + grapesFile?.dbResourceId + '.json'"/>
                     <script><![CDATA[
-                        htmlFile.move(project.location + "/" + htmlFile.dbResourceId + ".html")
+                        htmlFile.move(htmlLocation)
                         grapesFile.putText(data)
-                        grapesFile.move(project.location + "/" + grapesFile.dbResourceId + ".json")
+                        grapesFile.move(grapesLocation)
                         ]]></script>
-                    <set field="htmlLocation" from="htmlFile.location"/>
-                    <set field="grapesLocation" from="grapesFile.location"/>
 
                     <if condition="emailTemplateId">
                         <service-call name="update#moqui.basic.email.EmailTemplate" in-map="[emailTemplateId:emailTemplateId,grapesLocation:grapesLocation,htmlLocation:htmlLocation]"/>
@@ -68,7 +68,8 @@ along with this software (see the LICENSE.md file). If not, see
                 </then>
                 <else>
                     <set field="putDbResource" from="ec.resource.getLocationReference(grapesLocation)"/>
-                    <if condition="!putDbResource || putDbResource.parent?.dbResourceId != grapesJsResource.dbResourceId">
+                    <!-- TODO: Is this a strong enough check to prevent unauthorized access? -->
+                    <if condition="!putDbResource || putDbResource.parent?.location != grapesJsResource.location">
                         <return error="true" message="Resource not found"/>
                     </if>
 

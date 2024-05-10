@@ -179,9 +179,11 @@ along with this software (see the LICENSE.md file). If not, see
                         response = JSON.parse(request.responseText);
                     }
                     // console.log('response ', response)
-                    window.resourceId = response.resourceId;
+                    window.htmlLocation = response.htmlLocation;
+                    window.grapesLocation = response.grapesLocation;
                     const url = new URL(window.location.href)
-                    url.searchParams.set('resourceId', window.resourceId);
+                    url.searchParams.set('htmlLocation', response.htmlLocation);
+                    url.searchParams.set('grapesLocation', response.grapesLocation);
                     window.history.pushState({}, '', url)
 
                     const projectData = JSON.parse(response.data);
