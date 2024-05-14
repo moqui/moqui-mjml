@@ -12,6 +12,3 @@ To install run (with moqui-framework):
 
 - Have all email templates setup as 
 
-### Setup
-
-- Have all email templates setup as 
