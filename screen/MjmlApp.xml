@@ -181,11 +181,13 @@ along with this software (see the LICENSE.md file). If not, see
                     // console.log('response ', response)
                     window.htmlLocation = response.htmlLocation;
                     window.grapesLocation = response.grapesLocation;
-                    const url = new URL(window.location.href)
-                    url.searchParams.set('htmlLocation', response.htmlLocation);
-                    url.searchParams.set('grapesLocation', response.grapesLocation);
-                    window.history.pushState({}, '', url)
+                    // const url = new URL(window.location.href)
+                    // url.searchParams.set('htmlLocation', response.htmlLocation);
+                    // url.searchParams.set('grapesLocation', response.grapesLocation);
+                    // window.history.pushState({}, '', url)
 
+                    window.moquiVars = response.moquiVars;
+                    // console.log('init window.moquiVars ', window.moquiVars)
                     const projectData = JSON.parse(response.data);
                     // console.log('window.projectData ', window.projectData)
 
@@ -215,18 +217,20 @@ along with this software (see the LICENSE.md file). If not, see
                                     // we have to properly update the body before the store and extract the
                                     // project data from the response result.
                                     onStore: data => {
-                                        return { id: window.grapesLocation, data, html:window.editor.runCommand('mjml-code-to-html')?.html }
+                                        return { id: window.grapesLocation, data, moquiVars:window.moquiVars, html:window.editor.runCommand('mjml-code-to-html')?.html }
                                     },
                                     onLoad: result => {
                                         if (result.resourceId !== null) {
                                             const url = new URL(window.location.href)
                                             url.searchParams.set('grapesLocation', result.grapesLocation);
-                                            url.searchParams.set('htmlLocation', result.htmlLocation);
-                                            url.searchParams.set('emailTemplateId', result.emailTemplateId);
+                                            // url.searchParams.set('htmlLocation', result.htmlLocation);
+                                            // url.searchParams.set('emailTemplateId', result.emailTemplateId);
                                             window.history.pushState({}, '', url)
                                             window.grapesLocation = result.grapesLocation;
                                             window.htmlLocation = result.htmlLocation;
                                             window.emailTemplateId = result.emailTemplateId;
+                                            window.moquiVars = result.moquiVars;
+                                            // console.log('onLoad window.moquiVars ', window.moquiVars)
                                         }
                                         // console.log('onLoad ', result)
                                         return result.data
