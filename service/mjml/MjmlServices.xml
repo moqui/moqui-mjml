@@ -14,6 +14,17 @@ along with this software (see the LICENSE.md file). If not, see
 -->
 <services xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://moqui.org/xsd/service-definition-3.xsd">
 
+    <service verb="get" noun="GlobalGrapeVarList">
+        <out-parameters>
+            <parameter name="baseLinkUrl"/>
+            <parameter name="currentYear"/>
+        </out-parameters>
+        <actions>
+            <set field="baseLinkUrl" from="!'production'.equals(System.getProperty('instance_purpose')) ? 'http://localhost:8080' : ec.web.getWebappRootUrl(true,true)" />
+            <set field="currentYear" from="ec.user.nowTimestamp.format('yyyy')"/>
+        </actions>
+    </service>
+
     <service verb="load" noun="GrapeJs">
         <description>Load GrapesJs resource. Can be adapted to entity other than EmailTemplate, but must have data for the grapesLocation and htmlLocation to ensure safety of read and write of resources.</description>
         <in-parameters>
@@ -25,12 +36,12 @@ along with this software (see the LICENSE.md file). If not, see
             <parameter name="grapesLocation"/>
             <parameter name="htmlLocation"/>
             <parameter name="data"/>
+            <parameter name="emailTemplateId"/>
+            <parameter name="moquiVars"/>
         </out-parameters>
         <actions>
             <if condition="grapesLocation == 'null'"><set field="grapesLocation" from="null"/></if>
             <if condition="htmlLocation == 'null'"><set field="htmlLocation" from="null"/></if>
-<!--            <log level="warn" message="resourceId is ${resourceId} resourceId.getClass().getName() ${resourceId.getClass().getName()} resourceId == 'null' ${resourceId == 'null'} resourceId == null ${resourceId == null}"/>-->
-<!--            <log level="warn" message="load context.toString() ${context.toString()}"/>-->
             <entity-find-one entity-name="moqui.basic.email.EmailTemplate" value-field="emailTemplate" auto-field-map="[emailTemplateId:emailTemplateId]"/>
             <if condition="!emailTemplate"><return error="true" message="Resource not found"/></if>
             <set field="grapesLocation" from="emailTemplate?.grapesLocation"/>
@@ -42,25 +53,84 @@ along with this software (see the LICENSE.md file). If not, see
                     <set field="htmlFile" from="grapesJsResource.makeFile(java.util.UUID.randomUUID().toString()+'.html')"/>
                     <set field="grapesFile" from="grapesJsResource.makeFile(java.util.UUID.randomUUID().toString()+'.json')"/>
 
-                    <set field="data" from="ec.resource.getLocationReference('dbresource://grapesjs/template/default.json').getText()"/>
+                    <service-call name="mjml.MjmlServices.get#GlobalGrapeVarList" out-map="context"/>
+                    <set field="dataRaw" from="ec.resource.getLocationReference('dbresource://grapesjs/template/default.json').getText()"/>
                     <set field="htmlLocation" from="grapesJsResource.location + '/' + htmlFile?.dbResourceId + '.html'"/>
                     <set field="grapesLocation" from="grapesJsResource.location + '/' + grapesFile?.dbResourceId + '.json'"/>
                     <script><![CDATA[
                         htmlFile.move(htmlLocation)
-                        grapesFile.putText(data)
+                        grapesFile.putText(dataRaw)
                         grapesFile.move(grapesLocation)
                         ]]></script>
-
                     <service-call name="update#moqui.basic.email.EmailTemplate" in-map="[emailTemplateId:emailTemplateId,grapesLocation:grapesLocation,htmlLocation:htmlLocation]"/>
+
+                    <service-call name="mjml.MjmlServices.get#GlobalGrapeVarList" out-map="globalGrapeVarList"/>
+                    <script><![CDATA[
+                        context.putAll(globalGrapeVarList)
+
+                        context.varList = globalGrapeVarList*.key.collect { '\\\$\\{'+it+'\\}' }
+                        context.replaceVarRegexPattern = context.varList.join('|')
+                        if (context.replaceVarRegexPattern) {
+                            context.dataPre = context.dataRaw.replaceAll(context.replaceVarRegexPattern) { match ->
+                                return "${match}"
+                            }
+                        }
+
+                        context.allVarsRegexPattern = /\$\{[a-zA-Z_]\w*\}/
+                        context.errorVarList = context.dataRaw.findAll(context.allVarsRegexPattern).unique().collect { it - '${' - '}' } - globalGrapeVarList*.key
+                        context.errorTemplateRegexPattern = errorVarList.collect { '\\\$\\{'+it+'\\}' }.join('|')
+                        if (context.errorTemplateRegexPattern) {
+                            context.dataPre = context.dataPre.replaceAll(context.errorTemplateRegexPattern) { match ->
+                                def cleanMatch = match - '${' - '}'
+                                return "\${" + cleanMatch + "!'\$\\{" + cleanMatch + "}'}"
+                            }
+                        }
+                        ]]></script>
+<!--                    <log level="warn" message="dataPre is ${dataPre}"/>-->
+                    <set field="grapesTempFile" from="grapesJsResource.makeFile(grapesFile?.dbResourceId + '.temp.json')"/>
+                    <script>grapesTempFile.putText(dataPre)</script>
+                    <set field="data" from="ec.resource.template(grapesTempFile.location, 'ftl')"/>
+                    <script>grapesTempFile.delete()</script>
+<!--                    <log level="warn" message="data is ${data}"/>-->
+                    <set field="moquiVars" from="globalGrapeVarList"/>
                 </then>
                 <else-if condition="grapesLocation &amp;&amp; htmlLocation">
-                    <set field="putDbResource" from="ec.resource.getLocationReference(grapesLocation)"/>
+                    <set field="grapesFile" from="ec.resource.getLocationReference(grapesLocation)"/>
                     <!-- TODO: Is this a strong enough check to prevent unauthorized access? -->
-                    <if condition="!putDbResource || putDbResource.parent?.location != grapesJsResource.location">
+                    <if condition="!grapesFile || grapesFile.parent?.location != grapesJsResource.location">
                         <return error="true" message="Resource not found"/>
                     </if>
 
-                    <set field="data" from="putDbResource.getText()"/>
+                    <service-call name="mjml.MjmlServices.get#GlobalGrapeVarList" out-map="globalGrapeVarList"/>
+                    <set field="dataRaw" from="grapesFile.getText()"/>
+                    <script><![CDATA[
+                        context.putAll(globalGrapeVarList)
+
+                        context.varList = globalGrapeVarList*.key.collect { '\\\$\\{'+it+'\\}' }
+                        context.replaceVarRegexPattern = context.varList.join('|')
+                        if (context.replaceVarRegexPattern) {
+                            context.dataPre = context.dataRaw.replaceAll(context.replaceVarRegexPattern) { match ->
+                                return "${match}"
+                            }
+                        }
+
+                        context.allVarsRegexPattern = /\$\{[a-zA-Z_]\w*\}/
+                        context.errorVarList = context.dataRaw.findAll(context.allVarsRegexPattern).unique().collect { it - '${' - '}' } - globalGrapeVarList*.key
+                        context.errorTemplateRegexPattern = errorVarList.collect { '\\\$\\{'+it+'\\}' }.join('|')
+                        if (context.errorTemplateRegexPattern) {
+                            context.dataPre = context.dataPre.replaceAll(context.errorTemplateRegexPattern) { match ->
+                                def cleanMatch = match - '${' - '}'
+                                return "\${" + cleanMatch + "!'\$\\{" + cleanMatch + "}'}"
+                            }
+                        }
+                        ]]></script>
+<!--                    <log level="warn" message="dataPre is ${dataPre}"/>-->
+                    <set field="grapesTempFile" from="grapesJsResource.makeFile(grapesFile?.dbResourceId + '.temp.json')"/>
+                    <script>grapesTempFile.putText(dataPre)</script>
+                    <set field="data" from="ec.resource.template(grapesTempFile.location, 'ftl')"/>
+                    <script>grapesTempFile.delete()</script>
+<!--                    <log level="warn" message="data is ${data}"/>-->
+                    <set field="moquiVars" from="globalGrapeVarList"/>
                 </else-if>
                 <else>
                     <return error="true" message="Resource not found"/>
@@ -75,6 +145,7 @@ along with this software (see the LICENSE.md file). If not, see
             <parameter name="grapesLocation"/>
             <parameter name="emailTemplateId"/>
             <parameter name="data"/>
+            <parameter name="moquiVars"/>
             <parameter name="html" allow-html="any"/>
         </in-parameters>
         <out-parameters>
@@ -88,12 +159,15 @@ along with this software (see the LICENSE.md file). If not, see
             <if condition="!emailTemplate"><return error="true" message="Resource not found"/></if>
             <set field="grapesLocation" from="emailTemplate?.grapesLocation"/>
             <set field="htmlLocation" from="emailTemplate?.htmlLocation"/>
-            <set field="data" from="groovy.json.JsonOutput.toJson(new groovy.json.JsonSlurper().parseText(ec.web.secureRequestParameters._requestBodyText).data)"/>
+            <set field="dataMap" from="new groovy.json.JsonSlurper().parseText(ec.web.secureRequestParameters._requestBodyText).data"/>
+<!--            <log level="warn" message="dataMap is ${dataMap}"/>-->
+            <set field="moquiVars" from="new groovy.json.JsonSlurper().parseText(ec.web.secureRequestParameters._requestBodyText).moquiVars"/>
+            <set field="data" from="groovy.json.JsonOutput.toJson(dataMap)"/>
 
             <set field="grapesJsResource" from="ec.resource.getLocationReference('dbresource://grapesjs/project')"/>
             <if condition="!htmlLocation &amp;&amp; !grapesLocation">
                 <then>
-<!--                TODO: This should work, but isn't used anywhere and is untested.
+<!--                TODO: This should work as of 2024 May 14, but isn't used anywhere and is untested. There will need to be work done based on the dataMap code
                     <set field="htmlFile" from="grapesJsResource.makeFile(java.util.UUID.randomUUID().toString()+'.html')"/>
                     <set field="grapesFile" from="grapesJsResource.makeFile(java.util.UUID.randomUUID().toString()+'.json')"/>
 
@@ -118,7 +192,21 @@ along with this software (see the LICENSE.md file). If not, see
                     <if condition="!grapesFile || grapesFile.parent?.location != grapesJsResource.location">
                         <return error="true" message="Resource not found"/>
                     </if>
-                    <script>grapesFile.putText(data)</script>
+                    <script><![CDATA[
+                        context.replaceMoquiVarRegexPattern = context.moquiVars*.value.join('|')
+
+                        if (context.replaceMoquiVarRegexPattern) {
+                            context.dataPre = data.replaceAll(context.replaceMoquiVarRegexPattern) { match ->
+                                def output = moquiVars.find { it.value == match }?.key
+                                return '${' + output + '}'
+                            }
+                        }
+                    ]]></script>
+                    <script>grapesFile.putText(dataPre)</script>
+
+<!--                    <set field="dataRaw" from="grapesFile.getText()"/>-->
+<!--                    <set field="dataRawMap" from="new groovy.json.JsonSlurper().parseText(dataRaw)"/>-->
+<!--                    <script>grapesFile.putText(data)</script>-->
 
                     <set field="htmlFile" from="null"/>
                     <if condition="htmlLocation"><then>
@@ -141,7 +229,7 @@ along with this software (see the LICENSE.md file). If not, see
                     <if condition="!htmlFile || htmlFile.parent?.location != grapesJsResource.location">
                         <return error="true" message="Resource not found"/>
                     </if>
-                    <script><![CDATA[htmlFile.putText(html)]]></script>
+<!--                    <script><![CDATA[htmlFile.putText(html)]]></script>-->
                 </else-if>
                 <else>
                     <return error="true" message="Resource not found"/>
