@@ -87,10 +87,30 @@ along with this software (see the LICENSE.md file). If not, see
                         }
                         ]]></script>
 <!--                    <log level="warn" message="dataPre is ${dataPre}"/>-->
-                    <set field="grapesTempFile" from="grapesJsResource.makeFile(grapesFile?.dbResourceId + '.temp.json')"/>
-                    <script>grapesTempFile.putText(dataPre)</script>
-                    <set field="data" from="ec.resource.template(grapesTempFile.location, 'ftl')"/>
-                    <script>grapesTempFile.delete()</script>
+                    <script><![CDATA[
+                        String location = "template.ftl";
+
+                        freemarker.template.Template newTemplate;
+                        Reader templateReader = null;
+
+                        try {
+                            templateReader = new StringReader(context.dataPre);
+                            // Use the getFtlConfiguration method from ec.resource.templateRenderers.ftl
+                            newTemplate = new freemarker.template.Template(location, templateReader, ec.resource.templateRenderers.ftl.getFtlConfiguration());
+                        } catch (Exception e) {
+                            throw new org.moqui.BaseArtifactException("Error while initializing template at " + location, e);
+                        } finally {
+                            if (templateReader != null) {
+                                try { templateReader.close(); }
+                                catch (Exception e) { logger.error("Error closing template reader", e); }
+                            }
+                        }
+                        StringWriter sw = new StringWriter()
+                        try {
+                            newTemplate.createProcessingEnvironment(ec.contextStack, sw).process();
+                        } catch (Exception e) { throw new org.moqui.BaseArtifactException("Error rendering template at " + location, e); }
+                        context.data = sw.toString();
+                        ]]></script>
 <!--                    <log level="warn" message="data is ${data}"/>-->
                     <set field="moquiVars" from="globalGrapeVarList"/>
                 </then>
@@ -125,10 +145,30 @@ along with this software (see the LICENSE.md file). If not, see
                         }
                         ]]></script>
 <!--                    <log level="warn" message="dataPre is ${dataPre}"/>-->
-                    <set field="grapesTempFile" from="grapesJsResource.makeFile(grapesFile?.dbResourceId + '.temp.json')"/>
-                    <script>grapesTempFile.putText(dataPre)</script>
-                    <set field="data" from="ec.resource.template(grapesTempFile.location, 'ftl')"/>
-                    <script>grapesTempFile.delete()</script>
+                    <script><![CDATA[
+                        String location = "template.ftl";
+
+                        freemarker.template.Template newTemplate;
+                        Reader templateReader = null;
+
+                        try {
+                            templateReader = new StringReader(context.dataPre);
+                            // Use the getFtlConfiguration method from ec.resource.templateRenderers.ftl
+                            newTemplate = new freemarker.template.Template(location, templateReader, ec.resource.templateRenderers.ftl.getFtlConfiguration());
+                        } catch (Exception e) {
+                            throw new org.moqui.BaseArtifactException("Error while initializing template at " + location, e);
+                        } finally {
+                            if (templateReader != null) {
+                                try { templateReader.close(); }
+                                catch (Exception e) { logger.error("Error closing template reader", e); }
+                            }
+                        }
+                        StringWriter sw = new StringWriter()
+                        try {
+                            newTemplate.createProcessingEnvironment(ec.contextStack, sw).process();
+                        } catch (Exception e) { throw new org.moqui.BaseArtifactException("Error rendering template at " + location, e); }
+                        context.data = sw.toString();
+                        ]]></script>
 <!--                    <log level="warn" message="data is ${data}"/>-->
                     <set field="moquiVars" from="globalGrapeVarList"/>
                 </else-if>
