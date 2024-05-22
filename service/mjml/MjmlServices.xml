@@ -34,7 +34,11 @@ along with this software (see the LICENSE.md file). If not, see
         </in-parameters>
         <out-parameters>
             <parameter name="grapesLocation"/>
+            <parameter name="grapesVersionName"/>
+            <parameter name="grapesPublishedVersionName"/>
             <parameter name="htmlLocation"/>
+            <parameter name="htmlVersionName"/>
+            <parameter name="htmlPublishedVersionName"/>
             <parameter name="data"/>
             <parameter name="emailTemplateId"/>
             <parameter name="moquiVars"/>
@@ -45,7 +49,9 @@ along with this software (see the LICENSE.md file). If not, see
             <entity-find-one entity-name="moqui.basic.email.EmailTemplate" value-field="emailTemplate" auto-field-map="[emailTemplateId:emailTemplateId]"/>
             <if condition="!emailTemplate"><return error="true" message="Resource not found"/></if>
             <set field="grapesLocation" from="emailTemplate?.grapesLocation"/>
+            <set field="grapesPublishedVersionName" from="emailTemplate?.grapesPublishedVersionName"/>
             <set field="htmlLocation" from="emailTemplate?.htmlLocation"/>
+            <set field="htmlPublishedVersionName" from="emailTemplate?.htmlPublishedVersionName"/>
 
             <set field="grapesJsResource" from="ec.resource.getLocationReference('dbresource://grapesjs/project')"/>
             <if condition="!grapesLocation &amp;&amp; !htmlLocation">
@@ -62,6 +68,8 @@ along with this software (see the LICENSE.md file). If not, see
                         grapesFile.putText(dataRaw)
                         grapesFile.move(grapesLocation)
                         ]]></script>
+                    <set field="htmlVersionName" from="htmlFile?.getCurrentVersion()?.getVersionName()"/>
+                    <set field="grapesVersionName" from="grapesFile?.getCurrentVersion()?.getVersionName()"/>
                     <service-call name="update#moqui.basic.email.EmailTemplate" in-map="[emailTemplateId:emailTemplateId,grapesLocation:grapesLocation,htmlLocation:htmlLocation]"/>
 
                     <service-call name="mjml.MjmlServices.get#GlobalGrapeVarList" out-map="globalGrapeVarList"/>
@@ -120,6 +128,8 @@ along with this software (see the LICENSE.md file). If not, see
                     <if condition="!grapesFile || grapesFile.parent?.location != grapesJsResource.location">
                         <return error="true" message="Resource not found"/>
                     </if>
+                    <set field="grapesVersionName" from="grapesFile?.getCurrentVersion()?.getVersionName()"/>
+                    <set field="htmlVersionName" from="ec.resource.getLocationReference(htmlLocation)?.getCurrentVersion()?.getVersionName()"/>
 
                     <service-call name="mjml.MjmlServices.get#GlobalGrapeVarList" out-map="globalGrapeVarList"/>
                     <set field="dataRaw" from="grapesFile.getText()"/>
@@ -183,14 +193,19 @@ along with this software (see the LICENSE.md file). If not, see
         <in-parameters>
             <parameter name="htmlLocation"/>
             <parameter name="grapesLocation"/>
-            <parameter name="emailTemplateId"/>
-            <parameter name="data"/>
-            <parameter name="moquiVars"/>
-            <parameter name="html" allow-html="any"/>
+            <parameter name="emailTemplateId" required="true"/>
+            <parameter name="data" required="true"/>
+            <parameter name="moquiVars" required="true"/>
+            <parameter name="html" allow-html="any" required="true"/>
+            <parameter name="publish" default="false" type="Boolean" required="true"/>
         </in-parameters>
         <out-parameters>
             <parameter name="htmlLocation"/>
+            <parameter name="htmlVersionName"/>
+            <parameter name="htmlPublishedVersionName"/>
             <parameter name="grapesLocation"/>
+            <parameter name="grapesVersionName"/>
+            <parameter name="grapesPublishedVersionName"/>
         </out-parameters>
         <actions>
             <if condition="htmlLocation == 'null'"><set field="htmlLocation" from="null"/></if>
@@ -198,7 +213,9 @@ along with this software (see the LICENSE.md file). If not, see
             <entity-find-one entity-name="moqui.basic.email.EmailTemplate" value-field="emailTemplate" auto-field-map="[emailTemplateId:emailTemplateId]"/>
             <if condition="!emailTemplate"><return error="true" message="Resource not found"/></if>
             <set field="grapesLocation" from="emailTemplate?.grapesLocation"/>
+            <set field="grapesPublishedVersionName" from="emailTemplate?.grapesPublishedVersionName"/>
             <set field="htmlLocation" from="emailTemplate?.htmlLocation"/>
+            <set field="htmlPublishedVersionName" from="emailTemplate?.htmlPublishedVersionName"/>
             <set field="dataMap" from="new groovy.json.JsonSlurper().parseText(ec.web.secureRequestParameters._requestBodyText).data"/>
 <!--            <log level="warn" message="dataMap is ${dataMap}"/>-->
             <set field="moquiVars" from="new groovy.json.JsonSlurper().parseText(ec.web.secureRequestParameters._requestBodyText).moquiVars"/>
@@ -243,10 +260,7 @@ along with this software (see the LICENSE.md file). If not, see
                         }
                     ]]></script>
                     <script>grapesFile.putText(dataPre)</script>
-
-<!--                    <set field="dataRaw" from="grapesFile.getText()"/>-->
-<!--                    <set field="dataRawMap" from="new groovy.json.JsonSlurper().parseText(dataRaw)"/>-->
-<!--                    <script>grapesFile.putText(data)</script>-->
+                    <set field="grapesVersionName" from="grapesFile?.getCurrentVersion()?.getVersionName()"/>
 
                     <set field="htmlFile" from="null"/>
                     <if condition="htmlLocation"><then>
@@ -269,7 +283,14 @@ along with this software (see the LICENSE.md file). If not, see
                     <if condition="!htmlFile || htmlFile.parent?.location != grapesJsResource.location">
                         <return error="true" message="Resource not found"/>
                     </if>
-<!--                    <script><![CDATA[htmlFile.putText(html)]]></script>-->
+                    <script><![CDATA[htmlFile.putText(html)]]></script>
+                    <set field="htmlVersionName" from="htmlFile?.getCurrentVersion()?.getVersionName()"/>
+                    <if condition="publish">
+                        <service-call name="update#moqui.basic.email.EmailTemplate" in-map="[emailTemplateId:emailTemplateId,
+                            htmlPublishedVersionName:htmlVersionName,grapesPublishedVersionName:grapesVersionName]"/>
+                        <set field="htmlPublishedVersionName" from="htmlVersionName"/>
+                        <set field="grapesPublishedVersionName" from="grapesVersionName"/>
+                    </if>
                 </else-if>
                 <else>
                     <return error="true" message="Resource not found"/>
@@ -277,6 +298,29 @@ along with this software (see the LICENSE.md file). If not, see
             </if>
         </actions>
     </service>
-
+    <service verb="get" noun="AfterMjmlStore">
+        <description>Get the data after storing the MJML data</description>
+        <in-parameters>
+            <parameter name="emailTemplateId" required="true"/>
+        </in-parameters>
+        <out-parameters>
+            <parameter name="htmlLocation"/>
+            <parameter name="htmlVersionName"/>
+            <parameter name="htmlPublishedVersionName"/>
+            <parameter name="grapesLocation"/>
+            <parameter name="grapesVersionName"/>
+            <parameter name="grapesPublishedVersionName"/>
+        </out-parameters>
+        <actions>
+            <entity-find-one entity-name="moqui.basic.email.EmailTemplate" value-field="emailTemplate" auto-field-map="[emailTemplateId:emailTemplateId]"/>
+            <if condition="!emailTemplate"><return error="true" message="Resource not found"/></if>
+            <set field="grapesLocation" from="emailTemplate?.grapesLocation"/>
+            <set field="grapesVersionName" from="ec.resource.getLocationReference(grapesLocation)?.getCurrentVersion()?.getVersionName()"/>
+            <set field="grapesPublishedVersionName" from="emailTemplate?.grapesPublishedVersionName"/>
+            <set field="htmlLocation" from="emailTemplate?.htmlLocation"/>
+            <set field="htmlVersionName" from="ec.resource.getLocationReference(htmlLocation)?.getCurrentVersion()?.getVersionName()"/>
+            <set field="htmlPublishedVersionName" from="emailTemplate?.htmlPublishedVersionName"/>
+        </actions>
+    </service>
 
 </services>

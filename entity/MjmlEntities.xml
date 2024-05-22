@@ -16,7 +16,9 @@ along with this software (see the LICENSE.md file). If not, see
 
     <extend-entity entity-name="EmailTemplate" package="moqui.basic.email">
         <field name="grapesLocation" type="text-medium"/>
+        <field name="grapesPublishedVersionName" type="text-short"/>
         <field name="htmlLocation" type="text-medium"/>
+        <field name="htmlPublishedVersionName" type="text-short"/>
     </extend-entity>
     <view-entity entity-name="ProductStoreEmailDetail" package="mantle.product.store">
         <member-entity entity-alias="PSE" entity-name="mantle.product.store.ProductStoreEmail"/>
