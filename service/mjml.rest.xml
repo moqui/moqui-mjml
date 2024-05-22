@@ -21,6 +21,9 @@ along with this software (see the LICENSE.md file). If not, see
     <resource name="mjml">
         <method type="get"><service name="mjml.MjmlServices.load#GrapeJs"/></method>
         <method type="post"><service name="mjml.MjmlServices.store#GrapeJs"/></method>
+        <resource name="afterMjmlStore">
+            <method type="get"><service name="mjml.MjmlServices.get#AfterMjmlStore"/></method>
+        </resource>
     </resource>
 
 </resource>
