@@ -17,11 +17,34 @@ along with this software (see the LICENSE.md file). If not, see
 
     <actions>
         <entity-find-one entity-name="moqui.basic.email.EmailTemplate" value-field="emailTemplate" auto-field-map="[emailTemplateId:emailTemplateId]"/>
-        <if condition="!emailTemplate">
+        <if condition="!emailTemplate || !emailTemplate.htmlLocation">
             <return error="true" message="Email Template not found"/>
         </if>
+        <set field="dataPre" from="ec.resource.getLocationReference(emailTemplate.htmlLocation).getText(emailTemplate.htmlPublishedVersionName)"/>
+        <script><![CDATA[
+            String location = "template.ftl";
 
-        <set field="renderedText" from="ec.resource.template(emailTemplate.htmlLocation, 'ftl')"/>
+            freemarker.template.Template newTemplate;
+            Reader templateReader = null;
+
+            try {
+                templateReader = new StringReader(context.dataPre);
+                // Use the getFtlConfiguration method from ec.resource.templateRenderers.ftl
+                newTemplate = new freemarker.template.Template(location, templateReader, ec.resource.templateRenderers.ftl.getFtlConfiguration());
+            } catch (Exception e) {
+                throw new org.moqui.BaseArtifactException("Error while initializing template at " + location, e);
+            } finally {
+                if (templateReader != null) {
+                    try { templateReader.close(); }
+                    catch (Exception e) { logger.error("Error closing template reader", e); }
+                }
+            }
+            StringWriter sw = new StringWriter()
+            try {
+                newTemplate.createProcessingEnvironment(ec.contextStack, sw).process();
+            } catch (Exception e) { throw new org.moqui.BaseArtifactException("Error rendering template at " + location, e); }
+            context.renderedText = sw.toString();
+            ]]></script>
     </actions>
 
     <widgets>
