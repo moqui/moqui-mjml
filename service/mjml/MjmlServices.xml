@@ -323,4 +323,75 @@ along with this software (see the LICENSE.md file). If not, see
         </actions>
     </service>
 
+    <service verb="remove" noun="ExcessMjmlEmailResourceHistories">
+        <in-parameters>
+            <parameter name="runDate" default="ec.user.nowTimestamp" required="true" type="Timestamp"/>
+        </in-parameters>
+        <out-parameters>
+            <parameter name="removedHistoryList"/>
+        </out-parameters>
+        <actions>
+            <entity-find entity-name="moqui.basic.email.EmailTemplate" list="emailTemplateList">
+                <econdition field-name="grapesLocation" operator="is-not-null"/>
+                <econdition field-name="htmlLocation" operator="is-not-null"/>
+                <select-field field-name="emailTemplateId,grapesLocation,htmlLocation,grapesPublishedVersionName,htmlPublishedVersionName"/>
+                <order-by field-name="-lastUpdatedStamp"/>
+            </entity-find>
+            <set field="resourceList" from="[]"/>
+            <iterate list="emailTemplateList" entry="emailTemplate">
+                <set field="grapesFile" from="ec.resource.getLocationReference(emailTemplate.grapesLocation)"/>
+                <if condition="grapesFile">
+                    <script><![CDATA[
+                        def versionWhitelist = []
+                        if (grapesFile?.getCurrentVersion()?.getVersionName()) versionWhitelist.add(grapesFile.getCurrentVersion().getVersionName())
+                        if (emailTemplate?.grapesPublishedVersionName) versionWhitelist.add(emailTemplate.grapesPublishedVersionName)
+                        resourceList.add([location:grapesFile.location,resourceId:grapesFile.dbResourceId,versionWhitelist:versionWhitelist.size()>0?versionWhitelist:null])]]></script>
+                </if>
+                <set field="htmlFile" from="ec.resource.getLocationReference(emailTemplate.htmlLocation)"/>
+                <if condition="htmlFile">
+                    <script><![CDATA[
+                        def versionWhitelist = []
+                        if (htmlFile?.getCurrentVersion()?.getVersionName()) versionWhitelist.add(htmlFile.getCurrentVersion().getVersionName())
+                        if (emailTemplate?.htmlPublishedVersionName) versionWhitelist.add(emailTemplate.htmlPublishedVersionName)
+                        resourceList.add([location:htmlFile.location,resourceId:htmlFile.dbResourceId,versionWhitelist:versionWhitelist.size()>0?versionWhitelist:null])]]></script>
+                </if>
+            </iterate>
+
+            <set field="oneHourAgo" from="Timestamp.from(runDate.toInstant().minus(1, java.time.temporal.ChronoUnit.HOURS))"/>
+            <set field="removedHistoryList" from="[]"/>
+
+            <iterate list="resourceList" entry="resource">
+                <entity-find entity-name="moqui.resource.DbResourceFileHistory" list="resourceHistoryPreList">
+                    <econdition field-name="resourceId" from="resource.resourceId"/>
+                    <econdition field-name="versionDate" operator="greater" from="oneHourAgo"/>
+                    <econdition field-name="versionDate" operator="less-equals" from="runDate"/>
+                    <select-field field-name="resourceId,versionName,versionDate,previousVersionName,userId"/>
+                    <order-by field-name="-versionDate"/>
+                </entity-find>
+                <set field="skippedUserIds" from="[]"/>
+                <set field="resourceHistoryList" from="[]"/>
+                <iterate list="resourceHistoryPreList" entry="resourceHistory">
+                    <!-- Add all but the single latest history per userId to resourceHistoryList -->
+                    <if condition="resource.versionWhitelist.contains(resourceHistory.versionName) || !skippedUserIds.contains(resourceHistory.userId)">
+<!--                        <log level="warn" message="${resource.resourceId} ${resourceHistory.versionName} userId ${resourceHistory.userId}"/>-->
+                        <set field="skippedUserIds" from="skippedUserIds + [resourceHistory.userId]"/><continue/></if>
+                    <set field="resourceHistoryList" from="resourceHistoryList + [resourceHistory]"/>
+                </iterate>
+                <iterate list="resourceHistoryList" entry="resourceHistory">
+                    <entity-find-one entity-name="moqui.resource.DbResourceFileHistory" value-field="usedResourceHistory" auto-field-map="[resourceId:resource.resourceId,previousVersionName:resourceHistory.versionName]" for-update="true">
+                        <select-field field-name="resourceId,versionName,versionDate,previousVersionName,userId"/></entity-find-one>
+<!--                    <log level="warn" message="set versionName ${usedResourceHistory.versionName} of previousVersionName ${usedResourceHistory.previousVersionName} to ${resourceHistory.previousVersionName}"/>-->
+                    <set field="usedResourceHistory.previousVersionName" from="resourceHistory.previousVersionName"/>
+
+                    <log level="info" message="Removed resource history ${resourceHistory.resourceId} version ${resourceHistory.versionName}"/>
+                    <set field="removedHistoryList" from="removedHistoryList + [resourceId:resource.resourceId, versionName:resourceHistory.versionName,versionDate:resourceHistory.versionDate,userId:resourceHistory.userId]"/>
+
+                    <entity-update value-field="usedResourceHistory"/>
+                    <entity-delete value-field="resourceHistory"/>
+                </iterate>
+            </iterate>
+
+        </actions>
+    </service>
+
 </services>
