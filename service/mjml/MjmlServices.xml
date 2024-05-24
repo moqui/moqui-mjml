@@ -327,7 +327,7 @@ along with this software (see the LICENSE.md file). If not, see
 
     <service verb="remove" noun="ExcessMjmlEmailResourceHistories">
         <in-parameters>
-            <parameter name="runDate" default="ec.user.nowTimestamp" required="true" type="Timestamp"/>
+            <parameter name="runDate" default="Timestamp.from(java.time.Instant.now())" required="true" type="Timestamp"/>
         </in-parameters>
         <out-parameters>
             <parameter name="removedHistoryList"/>
