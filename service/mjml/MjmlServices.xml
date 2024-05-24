@@ -68,8 +68,8 @@ along with this software (see the LICENSE.md file). If not, see
                         grapesFile.putText(dataRaw)
                         grapesFile.move(grapesLocation)
                         ]]></script>
-                    <set field="htmlVersionName" from="htmlFile?.getCurrentVersion()?.getVersionName()"/>
-                    <set field="grapesVersionName" from="grapesFile?.getCurrentVersion()?.getVersionName()"/>
+                    <set field="htmlVersionName" from="htmlFile?.getCurrentVersion()?.getVersionName() ?: htmlFile?.getRootVersion()?.getVersionName() ?: '01'"/>
+                    <set field="grapesVersionName" from="grapesFile?.getCurrentVersion()?.getVersionName() ?: grapesFile?.getRootVersion()?.getVersionName() ?: '01'"/>
                     <service-call name="update#moqui.basic.email.EmailTemplate" in-map="[emailTemplateId:emailTemplateId,grapesLocation:grapesLocation,htmlLocation:htmlLocation]"/>
 
                     <service-call name="mjml.MjmlServices.get#GlobalGrapeVarList" out-map="globalGrapeVarList"/>
@@ -128,8 +128,10 @@ along with this software (see the LICENSE.md file). If not, see
                     <if condition="!grapesFile || grapesFile.parent?.location != grapesJsResource.location">
                         <return error="true" message="Resource not found"/>
                     </if>
-                    <set field="grapesVersionName" from="grapesFile?.getCurrentVersion()?.getVersionName()"/>
-                    <set field="htmlVersionName" from="ec.resource.getLocationReference(htmlLocation)?.getCurrentVersion()?.getVersionName()"/>
+                    <set field="grapesVersionName" from="grapesFile?.getCurrentVersion()?.getVersionName() ?: grapesFile?.getRootVersion()?.getVersionName() ?: '01'"/>
+                    <set field="tempHtmlFile" from="ec.resource.getLocationReference(htmlLocation)"/>
+                    <set field="htmlVersionName" from="tempHtmlFile?.getCurrentVersion()?.getVersionName() ?: tempHtmlFile?.getRootVersion()?.getVersionName() ?: '01'"/>
+                    <set field="tempHtmlFile" from="null"/>
 
                     <service-call name="mjml.MjmlServices.get#GlobalGrapeVarList" out-map="globalGrapeVarList"/>
                     <set field="dataRaw" from="grapesFile.getText()"/>
