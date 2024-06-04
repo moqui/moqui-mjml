@@ -34,7 +34,11 @@ along with this software (see the LICENSE.md file). If not, see
         </in-parameters>
         <out-parameters>
             <parameter name="grapesLocation"/>
+            <parameter name="grapesVersionName"/>
+            <parameter name="grapesPublishedVersionName"/>
             <parameter name="htmlLocation"/>
+            <parameter name="htmlVersionName"/>
+            <parameter name="htmlPublishedVersionName"/>
             <parameter name="data"/>
             <parameter name="emailTemplateId"/>
             <parameter name="moquiVars"/>
@@ -45,7 +49,9 @@ along with this software (see the LICENSE.md file). If not, see
             <entity-find-one entity-name="moqui.basic.email.EmailTemplate" value-field="emailTemplate" auto-field-map="[emailTemplateId:emailTemplateId]"/>
             <if condition="!emailTemplate"><return error="true" message="Resource not found"/></if>
             <set field="grapesLocation" from="emailTemplate?.grapesLocation"/>
+            <set field="grapesPublishedVersionName" from="emailTemplate?.grapesPublishedVersionName"/>
             <set field="htmlLocation" from="emailTemplate?.htmlLocation"/>
+            <set field="htmlPublishedVersionName" from="emailTemplate?.htmlPublishedVersionName"/>
 
             <set field="grapesJsResource" from="ec.resource.getLocationReference('dbresource://grapesjs/project')"/>
             <if condition="!grapesLocation &amp;&amp; !htmlLocation">
@@ -54,7 +60,8 @@ along with this software (see the LICENSE.md file). If not, see
                     <set field="grapesFile" from="grapesJsResource.makeFile(java.util.UUID.randomUUID().toString()+'.json')"/>
 
                     <service-call name="mjml.MjmlServices.get#GlobalGrapeVarList" out-map="context"/>
-                    <set field="dataRaw" from="ec.resource.getLocationReference('dbresource://grapesjs/template/default.json').getText()"/>
+                    <set field="defaultLocation" value="dbresource://grapesjs/template/default.json"/>
+                    <set field="dataRaw" from="ec.resource.getLocationReference(defaultLocation).getText()"/>
                     <set field="htmlLocation" from="grapesJsResource.location + '/' + htmlFile?.dbResourceId + '.html'"/>
                     <set field="grapesLocation" from="grapesJsResource.location + '/' + grapesFile?.dbResourceId + '.json'"/>
                     <script><![CDATA[
@@ -62,6 +69,8 @@ along with this software (see the LICENSE.md file). If not, see
                         grapesFile.putText(dataRaw)
                         grapesFile.move(grapesLocation)
                         ]]></script>
+                    <set field="htmlVersionName" from="htmlFile?.getCurrentVersion()?.getVersionName() ?: htmlFile?.getRootVersion()?.getVersionName() ?: '01'"/>
+                    <set field="grapesVersionName" from="grapesFile?.getCurrentVersion()?.getVersionName() ?: grapesFile?.getRootVersion()?.getVersionName() ?: '01'"/>
                     <service-call name="update#moqui.basic.email.EmailTemplate" in-map="[emailTemplateId:emailTemplateId,grapesLocation:grapesLocation,htmlLocation:htmlLocation]"/>
 
                     <service-call name="mjml.MjmlServices.get#GlobalGrapeVarList" out-map="globalGrapeVarList"/>
@@ -76,7 +85,7 @@ along with this software (see the LICENSE.md file). If not, see
                             }
                         }
 
-                        context.allVarsRegexPattern = /\$\{[a-zA-Z_]\w*\}/
+                        context.allVarsRegexPattern = /\$\{[a-zA-Z_][a-zA-Z0-9_.]*\}/
                         context.errorVarList = context.dataRaw.findAll(context.allVarsRegexPattern).unique().collect { it - '${' - '}' } - globalGrapeVarList*.key
                         context.errorTemplateRegexPattern = errorVarList.collect { '\\\$\\{'+it+'\\}' }.join('|')
                         if (context.errorTemplateRegexPattern) {
@@ -88,7 +97,7 @@ along with this software (see the LICENSE.md file). If not, see
                         ]]></script>
 <!--                    <log level="warn" message="dataPre is ${dataPre}"/>-->
                     <script><![CDATA[
-                        String location = "template.ftl";
+                        String location = defaultLocation;
 
                         freemarker.template.Template newTemplate;
                         Reader templateReader = null;
@@ -120,6 +129,10 @@ along with this software (see the LICENSE.md file). If not, see
                     <if condition="!grapesFile || grapesFile.parent?.location != grapesJsResource.location">
                         <return error="true" message="Resource not found"/>
                     </if>
+                    <set field="grapesVersionName" from="grapesFile?.getCurrentVersion()?.getVersionName() ?: grapesFile?.getRootVersion()?.getVersionName() ?: '01'"/>
+                    <set field="tempHtmlFile" from="ec.resource.getLocationReference(htmlLocation)"/>
+                    <set field="htmlVersionName" from="tempHtmlFile?.getCurrentVersion()?.getVersionName() ?: tempHtmlFile?.getRootVersion()?.getVersionName() ?: '01'"/>
+                    <set field="tempHtmlFile" from="null"/>
 
                     <service-call name="mjml.MjmlServices.get#GlobalGrapeVarList" out-map="globalGrapeVarList"/>
                     <set field="dataRaw" from="grapesFile.getText()"/>
@@ -134,7 +147,7 @@ along with this software (see the LICENSE.md file). If not, see
                             }
                         }
 
-                        context.allVarsRegexPattern = /\$\{[a-zA-Z_]\w*\}/
+                        context.allVarsRegexPattern = /\$\{[a-zA-Z_][a-zA-Z0-9_.]*\}/
                         context.errorVarList = context.dataRaw.findAll(context.allVarsRegexPattern).unique().collect { it - '${' - '}' } - globalGrapeVarList*.key
                         context.errorTemplateRegexPattern = errorVarList.collect { '\\\$\\{'+it+'\\}' }.join('|')
                         if (context.errorTemplateRegexPattern) {
@@ -146,7 +159,7 @@ along with this software (see the LICENSE.md file). If not, see
                         ]]></script>
 <!--                    <log level="warn" message="dataPre is ${dataPre}"/>-->
                     <script><![CDATA[
-                        String location = "template.ftl";
+                        String location = grapesFile.location;
 
                         freemarker.template.Template newTemplate;
                         Reader templateReader = null;
@@ -183,14 +196,19 @@ along with this software (see the LICENSE.md file). If not, see
         <in-parameters>
             <parameter name="htmlLocation"/>
             <parameter name="grapesLocation"/>
-            <parameter name="emailTemplateId"/>
-            <parameter name="data"/>
-            <parameter name="moquiVars"/>
-            <parameter name="html" allow-html="any"/>
+            <parameter name="emailTemplateId" required="true"/>
+            <parameter name="data" required="true"/>
+            <parameter name="moquiVars" required="true"/>
+            <parameter name="html" allow-html="any" required="true"/>
+            <parameter name="publish" default="false" type="Boolean" required="true"/>
         </in-parameters>
         <out-parameters>
             <parameter name="htmlLocation"/>
+            <parameter name="htmlVersionName"/>
+            <parameter name="htmlPublishedVersionName"/>
             <parameter name="grapesLocation"/>
+            <parameter name="grapesVersionName"/>
+            <parameter name="grapesPublishedVersionName"/>
         </out-parameters>
         <actions>
             <if condition="htmlLocation == 'null'"><set field="htmlLocation" from="null"/></if>
@@ -198,7 +216,9 @@ along with this software (see the LICENSE.md file). If not, see
             <entity-find-one entity-name="moqui.basic.email.EmailTemplate" value-field="emailTemplate" auto-field-map="[emailTemplateId:emailTemplateId]"/>
             <if condition="!emailTemplate"><return error="true" message="Resource not found"/></if>
             <set field="grapesLocation" from="emailTemplate?.grapesLocation"/>
+            <set field="grapesPublishedVersionName" from="emailTemplate?.grapesPublishedVersionName"/>
             <set field="htmlLocation" from="emailTemplate?.htmlLocation"/>
+            <set field="htmlPublishedVersionName" from="emailTemplate?.htmlPublishedVersionName"/>
             <set field="dataMap" from="new groovy.json.JsonSlurper().parseText(ec.web.secureRequestParameters._requestBodyText).data"/>
 <!--            <log level="warn" message="dataMap is ${dataMap}"/>-->
             <set field="moquiVars" from="new groovy.json.JsonSlurper().parseText(ec.web.secureRequestParameters._requestBodyText).moquiVars"/>
@@ -243,10 +263,7 @@ along with this software (see the LICENSE.md file). If not, see
                         }
                     ]]></script>
                     <script>grapesFile.putText(dataPre)</script>
-
-<!--                    <set field="dataRaw" from="grapesFile.getText()"/>-->
-<!--                    <set field="dataRawMap" from="new groovy.json.JsonSlurper().parseText(dataRaw)"/>-->
-<!--                    <script>grapesFile.putText(data)</script>-->
+                    <set field="grapesVersionName" from="grapesFile?.getCurrentVersion()?.getVersionName()"/>
 
                     <set field="htmlFile" from="null"/>
                     <if condition="htmlLocation"><then>
@@ -269,7 +286,14 @@ along with this software (see the LICENSE.md file). If not, see
                     <if condition="!htmlFile || htmlFile.parent?.location != grapesJsResource.location">
                         <return error="true" message="Resource not found"/>
                     </if>
-<!--                    <script><![CDATA[htmlFile.putText(html)]]></script>-->
+                    <script><![CDATA[htmlFile.putText(html)]]></script>
+                    <set field="htmlVersionName" from="htmlFile?.getCurrentVersion()?.getVersionName()"/>
+                    <if condition="publish">
+                        <service-call name="update#moqui.basic.email.EmailTemplate" in-map="[emailTemplateId:emailTemplateId,
+                            htmlPublishedVersionName:htmlVersionName,grapesPublishedVersionName:grapesVersionName]"/>
+                        <set field="htmlPublishedVersionName" from="htmlVersionName"/>
+                        <set field="grapesPublishedVersionName" from="grapesVersionName"/>
+                    </if>
                 </else-if>
                 <else>
                     <return error="true" message="Resource not found"/>
@@ -277,6 +301,100 @@ along with this software (see the LICENSE.md file). If not, see
             </if>
         </actions>
     </service>
+    <service verb="get" noun="AfterMjmlStore">
+        <description>Get the data after storing the MJML data</description>
+        <in-parameters>
+            <parameter name="emailTemplateId" required="true"/>
+        </in-parameters>
+        <out-parameters>
+            <parameter name="htmlLocation"/>
+            <parameter name="htmlVersionName"/>
+            <parameter name="htmlPublishedVersionName"/>
+            <parameter name="grapesLocation"/>
+            <parameter name="grapesVersionName"/>
+            <parameter name="grapesPublishedVersionName"/>
+        </out-parameters>
+        <actions>
+            <entity-find-one entity-name="moqui.basic.email.EmailTemplate" value-field="emailTemplate" auto-field-map="[emailTemplateId:emailTemplateId]"/>
+            <if condition="!emailTemplate"><return error="true" message="Resource not found"/></if>
+            <set field="grapesLocation" from="emailTemplate?.grapesLocation"/>
+            <set field="grapesVersionName" from="ec.resource.getLocationReference(grapesLocation)?.getCurrentVersion()?.getVersionName()"/>
+            <set field="grapesPublishedVersionName" from="emailTemplate?.grapesPublishedVersionName"/>
+            <set field="htmlLocation" from="emailTemplate?.htmlLocation"/>
+            <set field="htmlVersionName" from="ec.resource.getLocationReference(htmlLocation)?.getCurrentVersion()?.getVersionName()"/>
+            <set field="htmlPublishedVersionName" from="emailTemplate?.htmlPublishedVersionName"/>
+        </actions>
+    </service>
 
+    <service verb="remove" noun="ExcessMjmlEmailResourceHistories">
+        <in-parameters>
+            <parameter name="runDate" default="Timestamp.from(java.time.Instant.now())" required="true" type="Timestamp"/>
+        </in-parameters>
+        <out-parameters>
+            <parameter name="removedHistoryList"/>
+        </out-parameters>
+        <actions>
+            <entity-find entity-name="moqui.basic.email.EmailTemplate" list="emailTemplateList">
+                <econdition field-name="grapesLocation" operator="is-not-null"/>
+                <econdition field-name="htmlLocation" operator="is-not-null"/>
+                <select-field field-name="emailTemplateId,grapesLocation,htmlLocation,grapesPublishedVersionName,htmlPublishedVersionName"/>
+                <order-by field-name="-lastUpdatedStamp"/>
+            </entity-find>
+            <set field="resourceList" from="[]"/>
+            <iterate list="emailTemplateList" entry="emailTemplate">
+                <set field="grapesFile" from="ec.resource.getLocationReference(emailTemplate.grapesLocation)"/>
+                <if condition="grapesFile">
+                    <script><![CDATA[
+                        def versionWhitelist = []
+                        if (grapesFile?.getCurrentVersion()?.getVersionName()) versionWhitelist.add(grapesFile.getCurrentVersion().getVersionName())
+                        if (emailTemplate?.grapesPublishedVersionName) versionWhitelist.add(emailTemplate.grapesPublishedVersionName)
+                        resourceList.add([location:grapesFile.location,resourceId:grapesFile.dbResourceId,versionWhitelist:versionWhitelist.size()>0?versionWhitelist:null])]]></script>
+                </if>
+                <set field="htmlFile" from="ec.resource.getLocationReference(emailTemplate.htmlLocation)"/>
+                <if condition="htmlFile">
+                    <script><![CDATA[
+                        def versionWhitelist = []
+                        if (htmlFile?.getCurrentVersion()?.getVersionName()) versionWhitelist.add(htmlFile.getCurrentVersion().getVersionName())
+                        if (emailTemplate?.htmlPublishedVersionName) versionWhitelist.add(emailTemplate.htmlPublishedVersionName)
+                        resourceList.add([location:htmlFile.location,resourceId:htmlFile.dbResourceId,versionWhitelist:versionWhitelist.size()>0?versionWhitelist:null])]]></script>
+                </if>
+            </iterate>
+
+            <set field="oneHourAgo" from="Timestamp.from(runDate.toInstant().minus(1, java.time.temporal.ChronoUnit.HOURS))"/>
+            <set field="removedHistoryList" from="[]"/>
+
+            <iterate list="resourceList" entry="resource">
+                <entity-find entity-name="moqui.resource.DbResourceFileHistory" list="resourceHistoryPreList">
+                    <econdition field-name="resourceId" from="resource.resourceId"/>
+                    <econdition field-name="versionDate" operator="greater" from="oneHourAgo"/>
+                    <econdition field-name="versionDate" operator="less-equals" from="runDate"/>
+                    <select-field field-name="resourceId,versionName,versionDate,previousVersionName,userId"/>
+                    <order-by field-name="-versionDate"/>
+                </entity-find>
+                <set field="skippedUserIds" from="[]"/>
+                <set field="resourceHistoryList" from="[]"/>
+                <iterate list="resourceHistoryPreList" entry="resourceHistory">
+                    <!-- Add all but the single latest history per userId to resourceHistoryList -->
+                    <if condition="resource.versionWhitelist.contains(resourceHistory.versionName) || !skippedUserIds.contains(resourceHistory.userId)">
+<!--                        <log level="warn" message="${resource.resourceId} ${resourceHistory.versionName} userId ${resourceHistory.userId}"/>-->
+                        <set field="skippedUserIds" from="skippedUserIds + [resourceHistory.userId]"/><continue/></if>
+                    <set field="resourceHistoryList" from="resourceHistoryList + [resourceHistory]"/>
+                </iterate>
+                <iterate list="resourceHistoryList" entry="resourceHistory">
+                    <entity-find-one entity-name="moqui.resource.DbResourceFileHistory" value-field="usedResourceHistory" auto-field-map="[resourceId:resource.resourceId,previousVersionName:resourceHistory.versionName]" for-update="true">
+                        <select-field field-name="resourceId,versionName,versionDate,previousVersionName,userId"/></entity-find-one>
+<!--                    <log level="warn" message="set versionName ${usedResourceHistory.versionName} of previousVersionName ${usedResourceHistory.previousVersionName} to ${resourceHistory.previousVersionName}"/>-->
+                    <set field="usedResourceHistory.previousVersionName" from="resourceHistory.previousVersionName"/>
+
+                    <log level="info" message="Removed resource history ${resourceHistory.resourceId} version ${resourceHistory.versionName}"/>
+                    <set field="removedHistoryList" from="removedHistoryList + [resourceId:resource.resourceId, versionName:resourceHistory.versionName,versionDate:resourceHistory.versionDate,userId:resourceHistory.userId]"/>
+
+                    <entity-update value-field="usedResourceHistory"/>
+                    <entity-delete value-field="resourceHistory"/>
+                </iterate>
+            </iterate>
+
+        </actions>
+    </service>
 
 </services>
