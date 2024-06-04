@@ -326,7 +326,7 @@ along with this software (see the LICENSE.md file). If not, see
         </actions>
     </service>
 
-    <service verb="remove" noun="ExcessMjmlEmailResourceHistories">
+    <service verb="remove" noun="ExcessMjmlEmailResourceHistories" authenticate="anonymous-all">
         <in-parameters>
             <parameter name="runDate" default="Timestamp.from(java.time.Instant.now())" required="true" type="Timestamp"/>
         </in-parameters>
