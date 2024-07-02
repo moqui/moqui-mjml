@@ -62,6 +62,7 @@ along with this software (see the LICENSE.md file). If not, see
                     <service-call name="mjml.MjmlServices.get#GlobalGrapeVarList" out-map="context"/>
                     <set field="defaultLocation" value="dbresource://grapesjs/template/default.json"/>
                     <set field="dataRaw" from="ec.resource.getLocationReference(defaultLocation).getText()"/>
+                    <if condition="!dataRaw"><log level="error" message="Template not found at ${defaultLocation}. Please load seed data for moqui-mjml."/></if>
                     <set field="htmlLocation" from="grapesJsResource.location + '/' + htmlFile?.dbResourceId + '.html'"/>
                     <set field="grapesLocation" from="grapesJsResource.location + '/' + grapesFile?.dbResourceId + '.json'"/>
                     <script><![CDATA[
