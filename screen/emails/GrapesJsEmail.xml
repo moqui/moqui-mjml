@@ -17,12 +17,15 @@ along with this software (see the LICENSE.md file). If not, see
 
     <actions>
         <entity-find-one entity-name="moqui.basic.email.EmailTemplate" value-field="emailTemplate" auto-field-map="[emailTemplateId:emailTemplateId]"/>
-        <if condition="!emailTemplate || !emailTemplate.htmlLocation">
+        <if condition="!emailTemplate || !emailTemplate.htmlLocation || !emailTemplate.htmlPublishedVersionName">
             <return error="true" message="Email Template not found"/>
         </if>
         <set field="dataPre" from="ec.resource.getLocationReference(emailTemplate.htmlLocation).getText(emailTemplate.htmlPublishedVersionName)"/>
+        <if condition="dataPre == null">
+            <return error="true" message="Email Template does not exist at ${emailTemplate.htmlLocation} with version ${emailTemplate.htmlPublishedVersionName}"/>
+        </if>
         <script><![CDATA[
-            String location = "template.ftl";
+            String location = emailTemplate?.htmlLocation ?: "template.ftl";
 
             freemarker.template.Template newTemplate;
             Reader templateReader = null;
