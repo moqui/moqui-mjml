@@ -24,6 +24,40 @@ along with this software (see the LICENSE.md file). If not, see
         <if condition="dataPre == null">
             <return error="true" message="Email Template does not exist at ${emailTemplate.htmlLocation} with version ${emailTemplate.htmlPublishedVersionName}"/>
         </if>
+        <set field="doc" from="org.jsoup.Jsoup.parse(dataPre)"/>
+        <script><![CDATA[
+            doc.outputSettings().escapeMode(org.jsoup.nodes.Entities.EscapeMode.xhtml).prettyPrint(false);
+
+            doc.traverse(new org.jsoup.select.NodeVisitor() {
+                public void head(org.jsoup.nodes.Node node, int depth) {
+                    if (node instanceof org.jsoup.nodes.TextNode) {
+                        def text = node.getWholeText();
+                        if(text.trim().length() > 0) {
+                            def newText = "";
+                            def lines = text.split("\n");
+                            for (line in lines) {
+                                if (line.startsWith("<br>")) {
+                                    line = line.replaceFirst(/^<br>/, "");
+                                }
+                                if (line.endsWith("<br>")) {
+                                    newText += line;
+                                } else {
+                                    newText += line + "<br>";
+                                }
+                            }
+                            if (newText.startsWith("<br>")) {
+                                newText = newText.replaceFirst(/^<br>/, "");
+                            }
+                            node = org.jsoup.nodes.TextNode.createFromEncoded(newText);
+                        }
+                    }
+                }
+                public void tail(org.jsoup.nodes.Node node, int depth) {
+                    // No action needed on tail
+                }
+            });
+            ]]></script>
+        <set field="dataPre" from="doc.html()"/>
         <script><![CDATA[
             String location = emailTemplate?.htmlLocation ?: "template.ftl";
 
