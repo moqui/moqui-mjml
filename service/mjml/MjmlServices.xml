@@ -385,13 +385,15 @@ along with this software (see the LICENSE.md file). If not, see
                     <entity-find-one entity-name="moqui.resource.DbResourceFileHistory" value-field="usedResourceHistory" auto-field-map="[resourceId:resource.resourceId,previousVersionName:resourceHistory.versionName]" for-update="true">
                         <select-field field-name="resourceId,versionName,versionDate,previousVersionName,userId"/></entity-find-one>
 <!--                    <log level="warn" message="set versionName ${usedResourceHistory.versionName} of previousVersionName ${usedResourceHistory.previousVersionName} to ${resourceHistory.previousVersionName}"/>-->
-                    <set field="usedResourceHistory.previousVersionName" from="resourceHistory.previousVersionName"/>
+                    <if condition="usedResourceHistory">
+                        <set field="usedResourceHistory.previousVersionName" from="resourceHistory?.previousVersionName"/>
 
-                    <log level="info" message="Removed resource history ${resourceHistory.resourceId} version ${resourceHistory.versionName}"/>
-                    <set field="removedHistoryList" from="removedHistoryList + [resourceId:resource.resourceId, versionName:resourceHistory.versionName,versionDate:resourceHistory.versionDate,userId:resourceHistory.userId]"/>
+                        <log level="info" message="Removed resource history ${resourceHistory.resourceId} version ${resourceHistory.versionName}"/>
+                        <set field="removedHistoryList" from="removedHistoryList + [resourceId:resource.resourceId, versionName:resourceHistory.versionName,versionDate:resourceHistory.versionDate,userId:resourceHistory.userId]"/>
 
-                    <entity-update value-field="usedResourceHistory"/>
-                    <entity-delete value-field="resourceHistory"/>
+                        <entity-update value-field="usedResourceHistory"/>
+                        <entity-delete value-field="resourceHistory"/>
+                    </if>
                 </iterate>
             </iterate>
 
