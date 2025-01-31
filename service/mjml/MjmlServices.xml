@@ -287,7 +287,15 @@ along with this software (see the LICENSE.md file). If not, see
                     <if condition="!htmlFile || htmlFile.parent?.location != grapesJsResource.location">
                         <return error="true" message="Resource not found"/>
                     </if>
-                    <script><![CDATA[htmlFile.putText(html)]]></script>
+                    <set field="htmlOut" from="null"/>
+                    <script><![CDATA[
+                        if (context.replaceMoquiVarRegexPattern) {
+                            context.htmlOut = html.replaceAll(context.replaceMoquiVarRegexPattern) { match ->
+                                def output = moquiVars.find { it.value == match }?.key
+                                return '${' + output + '}'
+                            }
+                        }
+                        htmlFile.putText(htmlOut)]]></script>
                     <set field="htmlVersionName" from="htmlFile?.getCurrentVersion()?.getVersionName()"/>
                     <if condition="publish">
                         <service-call name="update#moqui.basic.email.EmailTemplate" in-map="[emailTemplateId:emailTemplateId,
