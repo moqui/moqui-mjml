@@ -40,7 +40,7 @@ along with this software (see the LICENSE.md file). If not, see
 
     <!-- ========= Service Jobs -->
     <moqui.service.job.ServiceJob jobName="remove_ExcessMjmlEmailResourceHistories" description="Remove any excess mjml resource histories for email templates"
-            serviceName="mjml.MjmlServices.remove#ExcessMjmlEmailResourceHistories" cronExpression="0 0 * * * ?" paused="N"
+            serviceName="mjml.MjmlServices.remove#ExcessMjmlEmailResourceHistories" cronExpression="0 0 3 * * ?"  paused="N" minRetryTime="1"
             transactionTimeout="3600"/>
 
 </entity-facade-xml>
