@@ -17,11 +17,71 @@ along with this software (see the LICENSE.md file). If not, see
 
     <actions>
         <entity-find-one entity-name="moqui.basic.email.EmailTemplate" value-field="emailTemplate" auto-field-map="[emailTemplateId:emailTemplateId]"/>
-        <if condition="!emailTemplate">
+        <if condition="!emailTemplate || !emailTemplate.htmlLocation || !emailTemplate.htmlPublishedVersionName">
             <return error="true" message="Email Template not found"/>
         </if>
+        <set field="dataPre" from="ec.resource.getLocationReference(emailTemplate.htmlLocation).getText(emailTemplate.htmlPublishedVersionName)"/>
+        <if condition="dataPre == null">
+            <return error="true" message="Email Template does not exist at ${emailTemplate.htmlLocation} with version ${emailTemplate.htmlPublishedVersionName}"/>
+        </if>
+        <set field="doc" from="org.jsoup.Jsoup.parse(dataPre)"/>
+        <script><![CDATA[
+            doc.outputSettings().escapeMode(org.jsoup.nodes.Entities.EscapeMode.xhtml).prettyPrint(false);
 
-        <set field="renderedText" from="ec.resource.template(emailTemplate.htmlLocation, 'ftl')"/>
+            doc.traverse(new org.jsoup.select.NodeVisitor() {
+                public void head(org.jsoup.nodes.Node node, int depth) {
+                    if (node instanceof org.jsoup.nodes.TextNode) {
+                        def text = node.getWholeText();
+                        if(text.trim().length() > 0) {
+                            def newText = "";
+                            def lines = text.split("\n");
+                            for (line in lines) {
+                                if (line.startsWith("<br>")) {
+                                    line = line.replaceFirst(/^<br>/, "");
+                                }
+                                if (line.endsWith("<br>")) {
+                                    newText += line;
+                                } else {
+                                    newText += line + "<br>";
+                                }
+                            }
+                            if (newText.startsWith("<br>")) {
+                                newText = newText.replaceFirst(/^<br>/, "");
+                            }
+                            node = org.jsoup.nodes.TextNode.createFromEncoded(newText);
+                        }
+                    }
+                }
+                public void tail(org.jsoup.nodes.Node node, int depth) {
+                    // No action needed on tail
+                }
+            });
+            ]]></script>
+        <set field="dataPre" from="doc.html()"/>
+        <script><![CDATA[
+            String location = emailTemplate?.htmlLocation ?: "template.ftl";
+
+            freemarker.template.Template newTemplate;
+            Reader templateReader = null;
+
+            try {
+                templateReader = new StringReader(context.dataPre);
+                // Use the getFtlConfiguration method from ec.resource.templateRenderers.ftl
+                newTemplate = new freemarker.template.Template(location, templateReader, ec.resource.templateRenderers.ftl.getFtlConfiguration());
+            } catch (Exception e) {
+                throw new org.moqui.BaseArtifactException("Error while initializing template at " + location, e);
+            } finally {
+                if (templateReader != null) {
+                    try { templateReader.close(); }
+                    catch (Exception e) { logger.error("Error closing template reader", e); }
+                }
+            }
+            StringWriter sw = new StringWriter()
+            try {
+                newTemplate.createProcessingEnvironment(ec.contextStack, sw).process();
+            } catch (Exception e) { throw new org.moqui.BaseArtifactException("Error rendering template at " + location, e); }
+            context.renderedText = sw.toString();
+            ]]></script>
     </actions>
 
     <widgets>

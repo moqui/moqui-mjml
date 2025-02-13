@@ -69,17 +69,6 @@ along with this software (see the LICENSE.md file). If not, see
                             </mj-column>
                         </mj-section>
 
-                        <!-- Image Header -->
-                        <mj-section background-url="http://1.bp.blogspot.com/-TPrfhxbYpDY/Uh3Refzk02I/AAAAAAAALw8/5sUJ0UUGYuw/s1600/New+York+in+The+1960's+-+70's+(2).jpg"
-                                    background-size="cover" background-repeat="no-repeat">
-                            <mj-column>
-                                <mj-text css-class="slogan" align="center" color="#fff" font-size="40px" font-family="Helvetica Neue">Slogan here</mj-text>
-                                <mj-button background-color="#F63A4D" href="#">
-                                    Promotion
-                                </mj-button>
-                            </mj-column>
-                        </mj-section>
-
                         <!-- Intro text -->
                         <mj-wrapper background-color="#ffe9f7" padding="10px">
                             <mj-section background-color="#eaeffa">
@@ -100,9 +89,6 @@ along with this software (see the LICENSE.md file). If not, see
                         <!-- Side image -->
                         <mj-section background-color="white">
                             <mj-column>
-                                <mj-image width="200px" src="https://designspell.files.wordpress.com/2012/01/sciolino-paris-bw.jpg" />
-                            </mj-column>
-                            <mj-column>
                                 <mj-text font-style="italic" font-size="20px" font-family="Helvetica Neue" color="#626262">
                                     Find amazing places ...
                                 </mj-text>
@@ -118,41 +104,19 @@ along with this software (see the LICENSE.md file). If not, see
                                 </mj-text>
                             </mj-column>
                         </mj-section>
-                        <mj-raw>
-                            <div class="container">
-                                <img class="item" src="https://source.unsplash.com/random/200x141?random" alt="Example image">
-                                <img class="item" src="https://source.unsplash.com/random/200x142?random" alt="Example image">
-                                <img class="item" src="https://source.unsplash.com/random/200x143?random" alt="Example image">
-                                <img class="item" src="https://source.unsplash.com/random/200x144?random" alt="Example image">
-                                <img class="item" src="https://source.unsplash.com/random/200x145?random" alt="Example image">
-                                <img class="item" src="https://source.unsplash.com/random/200x146?random" alt="Example image">
-                            </div>
-                        </mj-raw>
-                        <!-- Icons -->
-                        <mj-section background-color="#fbfbfb">
-                            <mj-column>
-                                <mj-image width="100px" src="http://191n.mj.am/img/191n/3s/x0l.png" />
-                            </mj-column>
-                            <mj-column>
-                                <mj-image width="100px" src="http://191n.mj.am/img/191n/3s/x01.png" />
-                            </mj-column>
-                            <mj-column>
-                                <mj-image width="100px" src="http://191n.mj.am/img/191n/3s/x0s.png" />
-                            </mj-column>
-                        </mj-section>
 
                         <!-- Footer -->
                         <mj-section background-color="#e7e7e7">
                             <mj-column>
                                 <mj-button href="#">Hello There!</mj-button>
                                 <mj-social font-size="15px" icon-size="30px" mode="horizontal">
-                                    <mj-social-element name="facebook" href="https://mjml.io/">
+                                    <mj-social-element name="facebook" href="https://moqui.org/">
                                         Facebook
                                     </mj-social-element>
-                                    <mj-social-element name="google" href="https://mjml.io/">
+                                    <mj-social-element name="google" href="https://moqui.org/">
                                         Google
                                     </mj-social-element>
-                                    <mj-social-element name="twitter" href="https://mjml.io/">
+                                    <mj-social-element name="twitter" href="https://moqui.org/">
                                         Twitter
                                     </mj-social-element>
                                 </mj-social>
@@ -180,14 +144,81 @@ along with this software (see the LICENSE.md file). If not, see
                     }
                     // console.log('response ', response)
                     window.htmlLocation = response.htmlLocation;
+                    window.htmlVersionName = response.htmlVersionName;
+                    window.htmlPublishedVersionName = response.htmlPublishedVersionName;
                     window.grapesLocation = response.grapesLocation;
-                    const url = new URL(window.location.href)
-                    url.searchParams.set('htmlLocation', response.htmlLocation);
-                    url.searchParams.set('grapesLocation', response.grapesLocation);
-                    window.history.pushState({}, '', url)
+                    window.grapesVersionName = response.grapesVersionName;
+                    window.grapesPublishedVersionName = response.grapesPublishedVersionName;
+                    // const url = new URL(window.location.href)
+                    // url.searchParams.set('htmlLocation', response.htmlLocation);
+                    // url.searchParams.set('grapesLocation', response.grapesLocation);
+                    // window.history.pushState({}, '', url)
 
+                    window.moquiVars = response.moquiVars;
+                    // console.log('init window.moquiVars ', window.moquiVars)
                     const projectData = JSON.parse(response.data);
                     // console.log('window.projectData ', window.projectData)
+
+                    function moquiPlugin(editor) {
+                        // Use the API: https://grapesjs.com/docs/api/
+
+                        window.moquiPublishText = 'moqui-publish';
+                        editor.Commands.add(window.moquiPublishText, () => {
+                            const request = new XMLHttpRequest();
+                            request.open("POST", "${baseLinkUrl}/rest/s1/moqui-mjml/mjml?emailTemplateId="+window.emailTemplateId, false); // `false` makes the request synchronous
+                            request.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+                            request.setRequestHeader("X-CSRF-Token", document.getElementById('confMoquiSessionToken').value);
+                            request.send(JSON.stringify({ publish:true, data: window.editor.getProjectData(), moquiVars:window.moquiVars, html:window.editor.runCommand('mjml-code-to-html')?.html }));
+                            // console.log('request ', request)
+                            if (request.status === 200) {
+                                const result = JSON.parse(request.responseText);
+                                window.htmlLocation = result.htmlLocation;
+                                window.htmlVersionName = result.htmlVersionName;
+                                window.htmlPublishedVersionName = result.htmlPublishedVersionName;
+                                window.grapesLocation = result.grapesLocation;
+                                window.grapesVersionName = result.grapesVersionName;
+                                window.grapesPublishedVersionName = result.grapesPublishedVersionName;
+                                if (window.grapesVersionName !== window.grapesPublishedVersionName && window.htmlVersionName !== window.htmlPublishedVersionName) {
+                                    editor.Panels.addButton('options', window.moquiPublishButtonSettings);
+                                } else {
+                                    editor.Panels.removeButton('options', window.moquiPublishText);
+                                }
+                            }
+                        });
+                        editor.on('storage:end:store', () => {
+                            // console.log('Storage store request ended');
+                            const request = new XMLHttpRequest();
+                            request.open("GET", "${baseLinkUrl}/rest/s1/moqui-mjml/mjml/afterMjmlStore?emailTemplateId="+window.emailTemplateId, false); // `false` makes the request synchronous
+                            request.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+                            request.setRequestHeader("X-CSRF-Token", document.getElementById('confMoquiSessionToken').value);
+                            request.send();
+                            if (request.status === 200) {
+                                const result = JSON.parse(request.responseText);
+                                window.htmlLocation = result.htmlLocation;
+                                window.htmlVersionName = result.htmlVersionName;
+                                window.htmlPublishedVersionName = result.htmlPublishedVersionName;
+                                window.grapesLocation = result.grapesLocation;
+                                window.grapesVersionName = result.grapesVersionName;
+                                window.grapesPublishedVersionName = result.grapesPublishedVersionName;
+                                if (window.grapesVersionName !== window.grapesPublishedVersionName && window.htmlVersionName !== window.htmlPublishedVersionName) {
+                                    editor.Panels.addButton('options', window.moquiPublishButtonSettings);
+                                } else {
+                                    editor.Panels.removeButton('options', window.moquiPublishText);
+                                }
+                            }
+                        });
+
+                        // Add Publish button
+                        window.moquiPublishButtonSettings = {
+                            id: window.moquiPublishText,
+                            command: 'moqui-publish',
+                            attributes: { title: 'publish' },
+                            label: `<div style="background-color: #f45e43; color:#2c2e35; padding: 0px 10px; border: none; border-radius: 10px; cursor: pointer;">Publish</div>`,
+                        };
+                        if (window.grapesVersionName !== window.grapesPublishedVersionName && window.htmlVersionName !== window.htmlPublishedVersionName) {
+                            editor.Panels.addButton('options', window.moquiPublishButtonSettings);
+                        }
+                    }
 
                     window.editor = grapesjs.init({
                         projectData: projectData,
@@ -215,18 +246,28 @@ along with this software (see the LICENSE.md file). If not, see
                                     // we have to properly update the body before the store and extract the
                                     // project data from the response result.
                                     onStore: data => {
-                                        return { id: window.grapesLocation, data, html:window.editor.runCommand('mjml-code-to-html')?.html }
+                                        return { id: window.grapesLocation, data, moquiVars:window.moquiVars, html:window.editor.runCommand('mjml-code-to-html')?.html }
                                     },
                                     onLoad: result => {
                                         if (result.resourceId !== null) {
                                             const url = new URL(window.location.href)
                                             url.searchParams.set('grapesLocation', result.grapesLocation);
-                                            url.searchParams.set('htmlLocation', result.htmlLocation);
-                                            url.searchParams.set('emailTemplateId', result.emailTemplateId);
+                                            // url.searchParams.set('htmlLocation', result.htmlLocation);
+                                            // url.searchParams.set('emailTemplateId', result.emailTemplateId);
                                             window.history.pushState({}, '', url)
-                                            window.grapesLocation = result.grapesLocation;
                                             window.htmlLocation = result.htmlLocation;
+                                            window.htmlVersionName = result.htmlVersionName;
+                                            window.htmlPublishedVersionName = result.htmlPublishedVersionName;
+                                            window.grapesLocation = result.grapesLocation;
+                                            window.grapesVersionName = result.grapesVersionName;
+                                            window.grapesPublishedVersionName = result.grapesPublishedVersionName;
                                             window.emailTemplateId = result.emailTemplateId;
+                                            window.moquiVars = result.moquiVars;
+                                            if (window.grapesVersionName !== window.grapesPublishedVersionName && window.htmlVersionName !== window.htmlPublishedVersionName) {
+                                                editor.Panels.addButton('options', window.moquiPublishButtonSettings);
+                                            } else {
+                                                editor.Panels.removeButton('options', window.moquiPublishText);
+                                            }
                                         }
                                         // console.log('onLoad ', result)
                                         return result.data
@@ -237,7 +278,7 @@ along with this software (see the LICENSE.md file). If not, see
                         fromElement: true,
                         container: '#gjs',
 
-                        plugins: ['grapesjs-mjml'],
+                        plugins: ['grapesjs-mjml',moquiPlugin],
                         pluginsOpts: {
                             'grapesjs-mjml': {}
                         }
