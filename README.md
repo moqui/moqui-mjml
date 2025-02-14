@@ -10,5 +10,5 @@ To install run (with moqui-framework):
 
 ### Setup
 
-- Have all email templates setup as 
+- Have all email templates setup as a ProductStoreEmail to EmailTemplate see: the ProductStore's Emails page
 
