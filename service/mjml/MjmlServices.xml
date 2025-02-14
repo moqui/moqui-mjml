@@ -195,9 +195,10 @@ along with this software (see the LICENSE.md file). If not, see
     <service verb="store" noun="GrapeJs" authenticate="anonymous-all">
         <description>Store GrapesJs resource. Can be adapted to entity other than EmailTemplate, but must have data for the grapesLocation and htmlLocation to ensure safety of read and write of resources.</description>
         <in-parameters>
+            <parameter name="emailTemplateId" required="true"/>
+
             <parameter name="htmlLocation"/>
             <parameter name="grapesLocation"/>
-            <parameter name="emailTemplateId" required="true"/>
             <parameter name="data" required="true"/>
             <parameter name="moquiVars" required="true"/>
             <parameter name="html" allow-html="any" required="true"/>
@@ -408,4 +409,96 @@ along with this software (see the LICENSE.md file). If not, see
         </actions>
     </service>
 
+    <service verb="flush" noun="EmailOnSave" authenticate="anonymous-all">
+        <description>Given a html and grapes location, save them to a configurable resource uri on the MjmlFlushEmailToOnSave seca.
+
+Could have a generic implementation that uses a hierarchical conditional structure of basic config like an EntitySyncConfig on DbResource GRAPESJS_PROJECT to component://moqui-mjml/dbresource/grapesjs/project</description>
+        <in-parameters>
+            <parameter name="emailTemplateId" required="true"/>
+            <parameter name="publish" type="Boolean"/>
+        </in-parameters>
+        <out-parameters>
+            <parameter name="outHtmlLocation"/>
+            <parameter name="outGrapesLocation"/>
+
+            <parameter name="htmlLocation"/>
+            <parameter name="grapesLocation"/>
+            <parameter name="productStoreId"/>
+            <parameter name="saveOnlyOnPublish" type="Boolean"/>
+        </out-parameters>
+        <actions>
+            <if condition="publish == null"><set field="publish" from="false"/></if>
+            <entity-find entity-name="mantle.product.store.ProductStoreEmailDetail" list="storeEmails">
+                <econdition field-name="emailTemplateId"/>
+            </entity-find>
+            <if condition="storeEmails.size() == 0"><return type="danger" message="No store emails found for emailTemplateId ${emailTemplateId}"/></if>
+            <set field="storeEmail" from="storeEmails.getFirst()"/>
+            <set field="htmlLocation" from="storeEmail.htmlLocation"/>
+            <set field="grapesLocation" from="storeEmail.grapesLocation"/>
+            <set field="productStoreId" from="storeEmail.productStoreId"/>
+            <if condition="!productStoreId"><return message="Defaulting to not saving email, because no productStoreId found for emailTemplateId ${emailTemplateId}"/></if>
+
+            <entity-find entity-name="mantle.product.store.ProductStoreSetting" list="locationStoreSettingList">
+                <econdition field-name="productStoreId"/>
+                <econdition field-name="settingTypeEnumId" value="PsstMjmlSaveLocation"/>
+                <econdition field-name="settingValue" operator="is-not-null"/>
+                <econdition field-name="settingValue" operator="not-equals" value=""/>
+                <date-filter/>
+                <order-by field-name="-fromDate"/>
+            </entity-find>
+            <if condition="locationStoreSettingList.size() == 0"><return message="No location setting found for productStoreId ${productStoreId} for emailTemplateId ${emailTemplateId}"/></if>
+            <entity-find entity-name="mantle.product.store.ProductStoreSetting" list="publishStoreSettingList">
+                <econdition field-name="productStoreId"/>
+                <econdition field-name="settingTypeEnumId" value="PsstMjmlSaveOnPublish"/>
+                <econdition field-name="settingValue" operator="is-not-null"/>
+                <econdition field-name="settingValue" operator="not-equals" value=""/>
+                <date-filter/>
+                <order-by field-name="-fromDate"/>
+            </entity-find>
+            <!-- default to only saving on publish -->
+            <set field="saveOnlyOnPublish" from="publishStoreSettingList.getFirst()?.settingValue == 'false' ? false : true"/>
+            <!-- conditions
+            saveOnlyOnPublish, publish, save
+            true, true, -> true
+            true, false, -> false
+            false, true, -> true
+            false, false, -> true -->
+            <if condition="saveOnlyOnPublish &amp;&amp; !publish"><return type="warning" message="Not saving email on save because saveOnlyOnPublish is true and publish is false"/></if>
+
+            <set field="toSaveLocation" from="ec.resource.getLocationReference(locationStoreSettingList.getFirst().settingValue)"/>
+            <if condition="!toSaveLocation"><return message="No location found for settingValue ${locationStoreSettingList.getFirst().settingValue}"/></if>
+
+            <set field="htmlFile" from="ec.resource.getLocationReference(htmlLocation)"/>
+            <set field="htmlText" from="htmlFile?.getText()"/>
+            <set field="grapesFile" from="ec.resource.getLocationReference(grapesLocation)"/>
+            <set field="grapesText" from="grapesFile?.getText()"/>
+
+            <set field="outHtmlLocation" value=""/>
+            <if condition="htmlText &amp;&amp; htmlText">
+                <then>
+                    <set field="outHtmlFile" from="toSaveLocation.getChild(htmlFile.getFileName())"/>
+                    <if condition="!outHtmlFile">
+                        <set field="outHtmlFile" from="toSaveLocation.makeFile(htmlFile.getFileName())"/>
+                    </if>
+                    <set field="outHtmlLocation" from="outHtmlFile.location"/>
+                    <log message="Saving html to ${outHtmlFile.location}"/>
+                    <script><![CDATA[outHtmlFile.putText(htmlText)]]></script>
+                </then>
+                <else><log level="warn" message="No html file text found at ${htmlLocation}"/></else>
+            </if>
+            <set field="outGrapesLocation" value=""/>
+            <if condition="grapesText &amp;&amp; grapesFile">
+                <then>
+                    <set field="outGrapesFile" from="toSaveLocation.getChild(grapesFile.getFileName())"/>
+                    <if condition="!outGrapesFile">
+                        <set field="outGrapesFile" from="toSaveLocation.makeFile(grapesFile.getFileName())"/>
+                    </if>
+                    <set field="outGrapesLocation" from="outGrapesFile.location"/>
+                    <log message="Saving grapes to ${outGrapesFile.location}"/>
+                    <script><![CDATA[outGrapesFile.putText(grapesText)]]></script>
+                </then>
+                <else><log level="warn" message="No grapes file text found at ${grapesLocation}"/></else></if>
+            <if condition="!htmlFile || !grapesFile"><return/></if>
+        </actions>
+    </service>
 </services>

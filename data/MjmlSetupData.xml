@@ -43,4 +43,8 @@ along with this software (see the LICENSE.md file). If not, see
             serviceName="mjml.MjmlServices.remove#ExcessMjmlEmailResourceHistories" cronExpression="0 0 3 * * ?"  paused="N" minRetryTime="1"
             transactionTimeout="3600"/>
 
+    <!-- ========= Product Store Configuration -->
+    <moqui.basic.Enumeration enumCode="mjmlSaveLocation" description="Place to save Mjml Emails (empty will not save anything)" enumId="PsstMjmlSaveLocation" enumTypeId="ProductStoreSettingType"/>
+    <moqui.basic.Enumeration enumCode="mjmlSaveOnPublish" description="Whether to save Mjml Emails only on publish (true/false) (empty will only save on publish)" enumId="PsstMjmlSaveOnPublish" enumTypeId="ProductStoreSettingType"/>
+
 </entity-facade-xml>
